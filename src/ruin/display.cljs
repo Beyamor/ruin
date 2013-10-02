@@ -10,12 +10,15 @@
 
 (defn- colored-text
   [foreground background text]
-  (str "%c{" (color/->rgb foreground) "}%b{" (color/->rgb background) "}" text))
+  (str "%c{" (color/->color foreground) "}%b{" (color/->color background) "}" text))
 
 (defn draw-text!
-  [{:keys [display]} & {:keys [x y xy foreground background text]
-                        :or {foreground "white" background "black"}}]
-  (let [x (or (first xy) x 0)
-        y (or (first xy) y 0)]
-    (.drawText display x y
-               (colored-text foreground background text))))
+  [{:keys [display]} x y text
+   & {:keys [foreground background]
+      :or {foreground "white" background "black"}}]
+  (.drawText display x y
+             (colored-text foreground background text)))
+
+(defn clear!
+  [{:keys [display]}]
+  (.clear display))

@@ -1,9 +1,13 @@
 (ns ruin.color)
 
 (defprotocol Color
-  (->rgb [this]))
+  (->color [this]))
 
 (extend-protocol Color
   cljs.core.PersistentVector
-  (->rgb [[r g b]]
-    (js/ROT.Color.toRGB (array r g b))))
+  (->color [[r g b]]
+    (js/ROT.Color.toRGB (array r g b)))
+
+  js/String
+  (->color [this]
+    this))

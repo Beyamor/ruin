@@ -1,5 +1,5 @@
 (ns ruin.core
-  (:require [ruin.display :as d]))
+  (:require [ruin.game :as g]))
 
 (set! *print-fn*
       (fn [& args]
@@ -17,7 +17,6 @@
        (js/alert "The rot.js library isn't supported by your browser.")
 
        :else
-       (let [display (d/create width height)
-             game {:display display}]
-         (.appendChild (.-body js/document) (:container display))
+       (let [game (g/create width height)]
+         (.appendChild (.-body js/document) (-> game :container))
          (onload game)))))
