@@ -8,3 +8,8 @@
     :foreground "white"
     :background "black"
     :mixins [mixins/player-moveable]))
+
+(def fungus
+  (e/create
+    :char "F"
+    :foreground "green"))
