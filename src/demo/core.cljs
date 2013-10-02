@@ -57,10 +57,10 @@
             min-y cam-y
             max-y (+ cam-y (:height display))
             tiles (get-in game [:scene :level :tiles])]
-        (dotimes [x (- max-x min-x)]
-          (dotimes [y (- max-y min-y)]
-            (let [tile (get tiles [(+ x min-x) (+ y min-y)])]
-              (d/draw-tile! display x y tile))))))
+        (doseq [x (range min-x max-x)
+                y (range min-y max-y)
+                :let [tile (get-in tiles [x y])]]
+          (d/draw-tile! display (- x min-x) (- y min-y) tile))))
     (handle-input [_ game [event-type key-code]]
       (-> game
         (->/when (= event-type :key-down)
