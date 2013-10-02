@@ -8,7 +8,8 @@
   [width height]
   (let [display (d/create width height)]
     {:display display
-     :container (:container display)}))
+     :container (:container display)
+     :camera {:x 0 :y 0}}))
 
 (defn change-scene
   [{old-scene :scene :as game} new-scene]
@@ -16,6 +17,7 @@
     (->/when old-scene
              (->> (s/exit old-scene)))
     (assoc :scene new-scene)
+    (assoc :camera {:x 0 :y 0})
     (->> (s/enter new-scene))
     (->/aside game
               (d/clear! (:display game))

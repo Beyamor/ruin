@@ -69,4 +69,5 @@
          (swap! game g/change-scene first-scene)
          (go (loop [event (<! key-events)]
                (swap! game handle-input event)
+               (s/render (:scene @game) @game)
                (recur (<! key-events))))))))

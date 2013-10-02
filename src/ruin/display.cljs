@@ -6,7 +6,9 @@
   (let [display (js/ROT.Display. (js-obj "width" width "height" height))
         container (.getContainer display)]
     {:display display
-     :container container}))
+     :container container
+     :width width
+     :height height}))
 
 (defn- colored-text
   [foreground background text]
@@ -24,5 +26,5 @@
   (.clear display))
 
 (defn draw-tile!
-  [display x y {{:keys [char foreground background]} :glyph}]
-  (draw-text! display x y char :foreground foreground :background background))
+  [{:keys [display]} x y {{:keys [char foreground background]} :glyph}]
+  (.draw display x y char foreground background))
