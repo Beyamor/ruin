@@ -89,7 +89,14 @@
 
 (defn entity-at-position?
   [scene x y]
-  (not (empty? (entities-at-position scene x y))))
+  (loop [es (seq (:entities scene))]
+    (if (seq es)
+      (let [[[id e] & es] es]
+        (if (and (= (:x e) x)
+                 (= (:y e) y))
+          true
+          (recur es)))
+      false)))
 
 (defn random-free-position
   [{:keys [level] :as scene}]
