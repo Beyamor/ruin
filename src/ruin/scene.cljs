@@ -41,3 +41,12 @@
                 :when (and (>= x left) (<= x (+ left display-width))
                            (>= y top) (<= y (+ top display-height)))]
                (d/draw-glyph! display (- x left) (- y top) (:glyph e))))
+
+(defn first-entity-with
+  [{:keys [entities]} property]
+  (loop [i 0]
+    (when (< i (alength entities))
+      (let [e (aget entities i)]
+        (if (contains? e property)
+          e
+          (recur (inc i)))))))

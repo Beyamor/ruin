@@ -20,14 +20,8 @@
         [x y]
         (recur (random-x) (random-y))))))
 
-(defn get-player
-  [{:keys [entities] :as scene}]
-  (loop [i 0]
-    (when (< i (alength entities))
-      (let [e (aget entities i)]
-        (if (:is-player? e)
-          e
-          (recur (inc i)))))))
+(def get-player
+  #(s/first-entity-with % :is-player?))
 
 (defn move-player
   [game dx dy]
