@@ -1,5 +1,6 @@
 (ns ruin.core
-  (:use [cljs.core.async :only [chan sliding-buffer put!]])
+  (:use [cljs.core.async :only [chan sliding-buffer put!]]
+        [ruin.util :only [apply-map]])
   (:require [ruin.game :as g]
             [ruin.scene :as s])
   (:require-macros [lonocloud.synthread :as ->]
@@ -17,8 +18,12 @@
     (merge properties))) 
 
 (defn tile
-  [glyph]
-  {:glyph glyph})
+  [& {:keys [walkable? diggable?]
+      :or {walkable? false diggable? false}
+      :as properties}]
+  {:glyph (apply-map glyph properties)
+   :walkable? walkable?
+   :diggable? diggable?})
 
 (def null-tile (tile (glyph :char ".")))
 

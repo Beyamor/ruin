@@ -10,11 +10,13 @@
 ; Tiles
 ;
 (def floor-tile (ruin/tile
-                  (ruin/glyph :char ".")))
+                  :char "."
+                  :walkable? true))
 
 (def wall-tile (ruin/tile
-                 (ruin/glyph :char "#"
-                             :foreground "goldenrod")))
+                 :char "#"
+                 :foreground "goldenrod"
+                 :diggable? true))
 
 ;
 ; Scenes
