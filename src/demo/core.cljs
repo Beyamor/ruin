@@ -6,6 +6,19 @@
             [ruin.generate :as generate])
   (:require-macros [lonocloud.synthread :as ->]))
 
+;
+; Tiles
+;
+(def floor-tile (ruin/tile
+                  (ruin/glyph :char ".")))
+
+(def wall-tile (ruin/tile
+                  (ruin/glyph :char "#"
+                              :foreground "goldenrod")))
+
+;
+; Scenes
+;
 (declare start-scene play-scene win-scene lose-scene)
 
 (def start-scene
@@ -42,13 +55,6 @@
 
   (exit [_ game] game))
 
-(def floor-tile (ruin/tile
-                  (ruin/glyph :char ".")))
-
-(def wall-tile (ruin/tile
-                  (ruin/glyph :char "#"
-                              :foreground "goldenrod")))
-
 (defn play-scene
   []
   (->PlayScene
@@ -56,8 +62,8 @@
       :width 80
       :height 24
       :iterations 3
-      :conversion {1 floor-tile
-                   0 wall-tile})))
+      :val->tile {1 floor-tile
+                  0 wall-tile})))
 
 (def win-scene
   {:render
