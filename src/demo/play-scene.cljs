@@ -10,37 +10,33 @@
   (:require-macros [lonocloud.synthread :as ->]))
 
 (defn get-player
-  [scene]
-  (->> scene
-    :entities
-    vals
-    (filter :is-player?)
-    first))
-
-(defn ids-with
-  [scene property]
-  (for [[id e] (:entities scene)
-        :when (contains? e property)]
-    id))
+  [{:keys [entities] :as scene}]
+  (loop [i 0]
+    (when (< i (alength entities))
+      (let [e (aget entities i)]
+        (if (:is-player? e)
+          e
+          (recur (inc i)))))))
 
 (defn move-player
   [game dx dy]
-  (->>
-    (reduce
-      (fn [scene id]
-        (let [e (get-in scene [:entities id])
-              new-x (+ (:x e) dx)
-              new-y (+ (:y e) dy)
-              {updated-e :entity
-               updated-level :level} ((:try-move e)
-                                        e scene new-x new-y)]
-          (-> scene
-            (->/when updated-e
-                     (assoc-in [:entities id] updated-e))
-            (->/when updated-level
-                     (assoc :level updated-level)))))
-      (:scene game) (ids-with (:scene game) :try-move))
-    (assoc game :scene)))
+  (let [entities (get-in game [:scene :entities])]
+    (->>
+      (areduce entities i scene (:scene game)
+               (let [e (aget entities i)]
+                 (-> scene
+                   (->/when (:try-move e)
+                            (->/let [new-x (+ (:x e) dx)
+                                     new-y (+ (:y e) dy)
+                                     {updated-e :entity
+                                      updated-level :level} ((:try-move e)
+                                                               e scene new-x new-y)]
+                                    (->/aside _
+                                              (when updated-e
+                                                (aset entities i updated-e)))
+                                    (->/when updated-level
+                                             (assoc :level updated-level)))))))
+      (assoc game :scene))))
 
 (defrecord PlayScene
   [level entities]
@@ -61,10 +57,13 @@
               y (range display-height)
               :let [tile (get-in tiles [(+ left x) (+ top y)])]]
         (d/draw-tile! display x y tile))
-      (doseq [[id e] entities
-              :let [x (:x e)
-                    y (:y e)]]
-        (d/draw-glyph! display (- x left) (- y top) (:glyph e)))))
+      (dotimes [i (alength entities)]
+        (let [e (aget entities i)
+              x (:x e)
+              y (:y e)]
+          (when (and (>= x left) (<= x (+ left display-width))
+                     (>= y top) (<= y (+ top display-height)))
+            (d/draw-glyph! display (- x left) (- y top) (:glyph e)))))))
 
   (handle-input [_ game [event-type key-code]]
     (-> game
@@ -78,7 +77,8 @@
 
 (defn add-entity
   [scene e]
-  (update-in scene [:entities] assoc (:id e) e))
+  (.push (:entities scene) e)
+  scene)
 
 (defn entities-at-position
   [scene x y]
@@ -89,14 +89,15 @@
 
 (defn entity-at-position?
   [scene x y]
-  (loop [es (seq (:entities scene))]
-    (if (seq es)
-      (let [[[id e] & es] es]
-        (if (and (= (:x e) x)
-                 (= (:y e) y))
-          true
-          (recur es)))
-      false)))
+  (let [entities (:entities scene)]
+    (loop [i 0]
+      (if (< i (alength entities))
+        (let [e (aget entities i)]
+          (if (and (= (:x e) x)
+                   (= (:y e) y))
+            true
+            (recur (inc i))))
+        false))))
 
 (defn random-free-position
   [{:keys [level] :as scene}]
@@ -134,6 +135,6 @@
                  (assoc :x player-x)
                  (assoc :y player-y))]
     (->
-      (->PlayScene level {})
+      (->PlayScene level (array))
       (add-entity player)
       add-fungi)))
