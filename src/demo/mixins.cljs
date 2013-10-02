@@ -10,7 +10,7 @@
    :group :moveable
    :try-move
    (fn [e {:keys [level]} x y]
-     (let [tile (get-in level [:tiles x y])]
+     (let [tile (l/get-tile level x y)]
        (cond
          (:walkable? tile)
          {:entity (-> e

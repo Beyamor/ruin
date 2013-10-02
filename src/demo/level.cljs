@@ -2,13 +2,20 @@
   (:require [demo.tiles :as ts])
   (:require-macros [lonocloud.synthread :as ->]))
 
+(defn get-tile
+  [level x y]
+  (aget (aget (:tiles level) x) y))
+
+(defn set-tile
+  [level x y tile]
+  (aset (aget (:tiles level) x) y tile)
+  level)
+
 (defn dig
   [level x y]
   (-> level
-    (->/in [:tiles]
-           (->/as tiles
-                  (->/when (:diggable? (get-in tiles [x y]))
-                           (assoc-in [x y] ts/floor-tile))))))
+    (->/when (:diggable? (get-tile level x y))
+             (set-tile x y ts/floor-tile))))
 
 (defn random-floor-position
   [level]
@@ -16,7 +23,7 @@
         random-y #(rand-int (:height level))
         tiles (:tiles level)]
     (loop [x (random-x) y (random-y)]
-      (if (= ts/floor-tile (get-in tiles [x y]))
+      (if (= ts/floor-tile (get-tile level x y))
         [x y]
         (recur (random-x) (random-y))))))
 

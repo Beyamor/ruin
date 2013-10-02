@@ -45,7 +45,7 @@
   (exit [_ game] game)
 
   (render [_ {{display-width :width display-height :height :as display} :display
-              {:keys [entities] {level-width :width level-height :height} :level :as scene} :scene
+              {:keys [entities] {level-width :width level-height :height :as level} :level :as scene} :scene
               :as game}]
     (let [player (get-player scene)
           center-x (:x player)
@@ -55,7 +55,7 @@
           tiles (get-in game [:scene :level :tiles])]
       (doseq [x (range display-width)
               y (range display-height)
-              :let [tile (get-in tiles [(+ left x) (+ top y)])]]
+              :let [tile (l/get-tile level (+ left x) (+ top y))]]
         (d/draw-tile! display x y tile))
       (dotimes [i (alength entities)]
         (let [e (aget entities i)
