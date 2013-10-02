@@ -1,7 +1,8 @@
 (ns ruin.game
   (:require [ruin.display :as d]
             [ruin.screen :as s])
-  (:require-macros [lonocloud.synthread :as ->]))
+  (:require-macros [lonocloud.synthread :as ->]
+                   [cljs.core.async.macros :refer [go]]))
 
 (defn create
   [width height]
