@@ -35,7 +35,7 @@
     game))
 
 (defn run
-  [& {:keys [width height onload]}]
+  [& {:keys [width height first-scene]}]
   (on-window-load
     #(cond
        (not (.isSupported js/ROT))
@@ -45,7 +45,7 @@
        (let [game (atom (g/create width height))
              key-events (watch-key-events)]
          (.appendChild (.-body js/document) (-> @game :container))
-         (swap! game onload)
+         (swap! game g/switch-scene first-scene)
          (go (loop [event (<! key-events)]
                (swap! game handle-input event)
                (recur (<! key-events))))))))

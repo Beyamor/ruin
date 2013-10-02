@@ -60,7 +60,4 @@
 (ruin/run
   :width 80
   :height 24
-  :onload
-  (fn [game]
-    (-> game
-      (g/switch-scene start-scene))))
+  :first-scene start-scene)
