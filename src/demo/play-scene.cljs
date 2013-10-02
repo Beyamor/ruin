@@ -25,23 +25,13 @@
 
 (defn move-player
   [game dx dy]
-  (let [entities (get-in game [:scene :entities])]
-    (->>
-      (areduce entities i scene (:scene game)
-               (let [e (aget entities i)]
-                 (-> scene
-                   (->/when (:try-move e)
-                            (->/let [new-x (+ (:x e) dx)
-                                     new-y (+ (:y e) dy)
-                                     {updated-e :entity
-                                      updated-level :level} ((:try-move e)
-                                                               e scene new-x new-y)]
-                                    (->/aside _
-                                              (when updated-e
-                                                (aset entities i updated-e)))
-                                    (->/when updated-level
-                                             (assoc :level updated-level)))))))
-      (assoc game :scene))))
+  (->>
+    (fn [{:keys [try-move] :as e} scene]
+      (let [new-x (+ (:x e) dx)
+            new-y (+ (:y e) dy)]
+        (try-move e scene new-x new-y)))
+    (s/update-by-mixins (:scene game) :moveable)
+    (assoc game :scene)))
 
 (defn render
   [{{display-width :width display-height :height :as display} :display

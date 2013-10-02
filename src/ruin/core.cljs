@@ -6,30 +6,6 @@
   (:require-macros [lonocloud.synthread :as ->]
                    [cljs.core.async.macros :refer [go]]))
 
-;
-; Miscellanea
-;
-(defn glyph
-  [& {:keys [char foreground background]
-      :or {char " " :foreground "white" :background "black"}}]
-  {:char char
-   :foreground foreground
-   :background background})
-
-(defn tile
-  [& {:keys [walkable? diggable?]
-      :or {walkable? false diggable? false}
-      :as properties}]
-  {:glyph (apply-map glyph properties)
-   :walkable? walkable?
-   :diggable? diggable?})
-
-(def null-tile (tile (glyph :char ".")))
-
-;
-; Core engine structure
-;
-
 (set! *print-fn*
       (fn [& args]
         (->> args (map str) (interpose " ") (apply str) (.log js/console))))

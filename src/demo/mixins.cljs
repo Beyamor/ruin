@@ -21,8 +21,11 @@
      (let [tile (l/get-tile level x y)]
        (cond
          (:walkable? tile)
-         {:entity (-> e
-                    (assoc :x x)
-                    (assoc :y y))}
+         {:update-entity
+          (-> e
+            (assoc :x x)
+            (assoc :y y))}
+
          (:diggable? tile)
-         {:level (dig level x y)})))})
+         {:update-level
+          (dig level x y)})))})

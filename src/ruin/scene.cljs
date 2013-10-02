@@ -1,5 +1,6 @@
 (ns ruin.scene
-  (:require [ruin.display :as d])
+  (:require [ruin.display :as d]
+            [ruin.entity :as e])
   (:require-macros [lonocloud.synthread :as ->]
                    [ruin.entities.macros :as es+]))
 
@@ -50,3 +51,25 @@
         (if (contains? e property)
           e
           (recur (inc i)))))))
+
+(defn- update-entity-at-index
+  [scene index updated-entity]
+  (aset (:entities scene) index updated-entity)
+  scene)
+
+(defn update-by-mixins
+  [scene mixin f]
+  (let [entities (:entities scene)]
+    (loop [i 0 scene scene]
+      (if (< i (alength entities))
+        (let [entity (aget entities i)]
+          (->>
+            (-> scene
+              (->/when (e/has-mixin? entity mixin)
+                       (->/let [{:keys [update-entity update-level]} (f entity scene)]
+                               (->/when update-entity
+                                        (update-entity-at-index i update-entity))
+                               (->/when update-level
+                                        (assoc :level update-level)))))
+            (recur (inc i))))
+        scene))))

@@ -1,6 +1,6 @@
 (ns ruin.entity
-  (:use [ruin.util :only [apply-map]])
-  (:require [ruin.core :as core])
+  (:use [ruin.util :only [apply-map]]
+        [ruin.base :only [glyph]])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (def id-store (atom 0))
@@ -38,7 +38,7 @@
      :x x
      :y y
      :name name
-     :glyph (apply-map core/glyph properties)
+     :glyph (apply-map glyph properties)
      :mixins (set
                (for [mixin mixins]
                  (:name mixin)))

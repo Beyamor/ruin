@@ -1,5 +1,5 @@
 (ns demo.tiles
-  (:require [ruin.core :as ruin]))
+  (:require [ruin.base :as ruin]))
 
 (def floor-tile (ruin/tile
                   :char "."
