@@ -5,28 +5,10 @@
             [ruin.scene :as s]
             [demo.entities :as es]
             [demo.tiles :as tiles]
+            [demo.level :as l]
             [ruin.generate :as generate])
   (:require-macros [lonocloud.synthread :as ->]))
 
-;
-; Tiles
-;
-; 
-; Verbin'
-;
-(defn random-floor-position
-  [level]
-  (let [random-x #(rand-int (:width level))
-        random-y #(rand-int (:height level))
-        tiles (:tiles level)]
-    (loop [x (random-x) y (random-y)]
-      (if (= tiles/floor-tile (get-in tiles [x y]))
-        [x y]
-        (recur (random-x) (random-y))))))
-
-;
-; Scenes
-;
 (declare start-scene play-scene)
 
 (def start-scene
@@ -98,7 +80,7 @@
                  :iterations 3
                  :val->tile {1 tiles/floor-tile
                              0 tiles/wall-tile})}
-        [player-x player-y] (random-floor-position level)
+        [player-x player-y] (l/random-floor-position level)
         player (-> es/player
                  (assoc :x player-x)
                  (assoc :y player-y))]
