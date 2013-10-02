@@ -1,10 +1,11 @@
 (ns demo.mixins
   (:require [demo.level :as l]))
 
-(def moveable
-  {:name :moveable
+(def player-moveable
+  {:name :player-moveable
+   :group :moveable
    :try-move
-   (fn [e level x y]
+   (fn [e {:keys [level]} x y]
      (let [tile (get-in level [:tiles x y])]
        (cond
          (:walkable? tile)

@@ -7,4 +7,4 @@
     :char "@"
     :foreground "white"
     :background "black"
-    :mixins [mixins/moveable]))
+    :mixins [mixins/player-moveable]))

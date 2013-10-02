@@ -36,6 +36,15 @@
      :glyph (apply-map core/glyph properties)
      :mixins (set
                (for [mixin mixins]
-                 (:name mixin)))}
+                 (:name mixin)))
+     :mixin-groups (set
+                     (for [mixin mixins
+                           :when (:group mixin)]
+                       (:group mixin)))}
     (add-mixin-properties mixins)
     (init-mixins mixins)))
+
+(defn has-mixin?
+  [e mixin]
+  (or (contains? (:mixins e) mixin)
+      (contains? (:mixin-groups e) mixin)))

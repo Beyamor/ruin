@@ -32,7 +32,7 @@
                 new-y (+ (:y player) dy)
                 {updated-player :entity
                  updated-level :level} ((:try-move player)
-                                          player (get-in game [:scene :level]) new-x new-y)]
+                                          player (:scene game) new-x new-y)]
             (-> game
               (->/when updated-player
                        (assoc-in [:scene :player] updated-player))
@@ -65,7 +65,9 @@
                  (->/when (= key-code js/ROT.VK_LEFT) (move-player -1 0))
                  (->/when (= key-code js/ROT.VK_RIGHT) (move-player 1 0))
                  (->/when (= key-code js/ROT.VK_UP) (move-player 0 -1))
-                 (->/when (= key-code js/ROT.VK_DOWN) (move-player 0 1)))))))
+                 (->/when (= key-code js/ROT.VK_DOWN) (move-player 0 1)))
+        (->/aside game
+                  (g/refresh game))))))
 
 (defn play-scene
   []

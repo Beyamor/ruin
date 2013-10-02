@@ -10,6 +10,11 @@
     {:display display
      :container (:container display)}))
 
+(defn refresh
+  [{:keys [scene display] :as game}]
+  (d/clear! display)
+  (s/render scene game))
+
 (defn change-scene
   [{old-scene :scene :as game} new-scene]
   (-> game
@@ -19,5 +24,4 @@
     (assoc :camera {:x 0 :y 0})
     (->> (s/enter new-scene))
     (->/aside game
-              (d/clear! (:display game))
-              (s/render new-scene game))))
+              (refresh game))))
