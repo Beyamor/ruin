@@ -1,7 +1,7 @@
 (ns ruin.core
   (:use [cljs.core.async :only [chan sliding-buffer put!]])
   (:require [ruin.game :as g]
-            [ruin.screen :as s])
+            [ruin.scene :as s])
   (:require-macros [lonocloud.synthread :as ->]
                    [cljs.core.async.macros :refer [go]]))
 
@@ -29,9 +29,9 @@
   (set! (.-onload js/window) f))
 
 (defn- handle-input
-  [{:keys [screen] :as game} event]
-  (if screen
-    (s/handle-input screen game event)
+  [{:keys [scene] :as game} event]
+  (if scene
+    (s/handle-input scene game event)
     game))
 
 (defn run

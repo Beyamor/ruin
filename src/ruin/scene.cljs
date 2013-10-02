@@ -1,7 +1,7 @@
-(ns ruin.screen
+(ns ruin.scene
   (:require-macros [lonocloud.synthread :as ->]))
 
-(defprotocol Screen
+(defprotocol Scene
   (enter [this game])
   (render [this game])
   (exit [this game])
@@ -27,7 +27,7 @@
   (-> game
     (->/when handle-input (handle-input event))))
 
-(extend-protocol Screen
+(extend-protocol Scene
   cljs.core.PersistentHashMap
   (enter [this game] (enter-map this game))
   (render [this game] (render-map this game))
@@ -41,5 +41,5 @@
   (handle-input [this game event] (handle-input-map this game event)))
 
 (defn create
-  [& {:as screen}]
-  screen)
+  [& {:as scene}]
+  scene)

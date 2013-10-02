@@ -1,6 +1,6 @@
 (ns ruin.game
   (:require [ruin.display :as d]
-            [ruin.screen :as s])
+            [ruin.scene :as s])
   (:require-macros [lonocloud.synthread :as ->]
                    [cljs.core.async.macros :refer [go]]))
 
@@ -10,13 +10,13 @@
     {:display display
      :container (:container display)}))
 
-(defn switch-screen
-  [{old-screen :screen :as game} new-screen]
+(defn switch-scene
+  [{old-scene :scene :as game} new-scene]
   (-> game
-    (->/when old-screen
-             (->> (s/exit old-screen)))
-    (assoc :screen new-screen)
-    (->> (s/enter new-screen))
+    (->/when old-scene
+             (->> (s/exit old-scene)))
+    (assoc :scene new-scene)
+    (->> (s/enter new-scene))
     (->/aside game
               (d/clear! (:display game))
-              (s/render new-screen game))))
+              (s/render new-scene game))))

@@ -4,9 +4,9 @@
             [ruin.core :as ruin])
   (:require-macros [lonocloud.synthread :as ->]))
 
-(declare start-screen play-screen win-screen lose-screen)
+(declare start-scene play-scene win-scene lose-scene)
 
-(def start-screen
+(def start-scene
   {:render
    (fn [{:keys [display]}]
      (doto display
@@ -19,9 +19,9 @@
      (-> game
        (->/when (and (= event-type :key-down)
                      (= keycode js/ROT.VK_RETURN))
-                (g/switch-screen play-screen))))})
+                (g/switch-scene play-scene))))})
 
-(def play-screen
+(def play-scene
   {:render
    (fn [{:keys [display]}]
      (doto display
@@ -34,11 +34,11 @@
      (-> game
        (->/when (= event-type :key-down)
                 (->/when (= keycode js/ROT.VK_RETURN)
-                         (g/switch-screen win-screen))
+                         (g/switch-scene win-scene))
                 (->/when (= keycode js/ROT.VK_ESCAPE)
-                         (g/switch-screen lose-screen)))))})
+                         (g/switch-scene lose-scene)))))})
 
-(def win-screen
+(def win-scene
   {:render
    (fn [{:keys [display]}]
      (dotimes [i 22]
@@ -49,7 +49,7 @@
            (d/draw-text! 2 (inc i) "You win!"
                          :background background)))))})
 
-(def lose-screen
+(def lose-scene
   {:render
    (fn [{:keys [display]}]
      (dotimes [i 22]
@@ -63,4 +63,4 @@
   :onload
   (fn [game]
     (-> game
-      (g/switch-screen start-screen))))
+      (g/switch-scene start-scene))))
