@@ -73,3 +73,15 @@
                                         (assoc :level update-level)))))
             (recur (inc i))))
         scene))))
+
+(defn entity-at-position?
+  [scene x y]
+  (let [entities (:entities scene)]
+    (loop [i 0]
+      (if (< i (alength entities))
+        (let [e (aget entities i)]
+          (if (and (= (:x e) x)
+                   (= (:y e) y))
+            true
+            (recur (inc i))))
+        false))))

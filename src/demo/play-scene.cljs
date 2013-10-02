@@ -69,22 +69,10 @@
                    (= (:y e) y))]
     e))
 
-(defn entity-at-position?
-  [scene x y]
-  (let [entities (:entities scene)]
-    (loop [i 0]
-      (if (< i (alength entities))
-        (let [e (aget entities i)]
-          (if (and (= (:x e) x)
-                   (= (:y e) y))
-            true
-            (recur (inc i))))
-        false))))
-
 (defn random-free-position
   [{:keys [level] :as scene}]
   (loop [[some-x some-y] (random-floor-position level)]
-    (if (entity-at-position? scene some-x some-y)
+    (if (s/entity-at-position? scene some-x some-y)
       (recur (random-floor-position level))
       [some-x some-y])))
 
