@@ -1,7 +1,9 @@
 (ns demo.core
   (:require [ruin.display :as d]
             [ruin.game :as g]
-            [ruin.core :as ruin])
+            [ruin.core :as ruin]
+            [ruin.scene :as s]
+            [ruin.generate :as generate])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (declare start-scene play-scene win-scene lose-scene)
@@ -19,24 +21,43 @@
      (-> game
        (->/when (and (= event-type :key-down)
                      (= keycode js/ROT.VK_RETURN))
-                (g/change-scene play-scene))))})
+                (g/change-scene (play-scene)))))})
 
-(def play-scene
-  {:render
-   (fn [{:keys [display]}]
-     (doto display
-       (d/draw-text! 3 4 "This game is so much fun!"
-                     :foreground "red" :background "white")
-       (d/draw-text! 4 6 "Press [Enter] to win or [Esc] to lose!")))
+(defrecord PlayScene
+  [level]
+  s/Scene
+  (enter [_ game] game)
 
-   :handle-input
-   (fn [game [event-type keycode]]
-     (-> game
-       (->/when (= event-type :key-down)
-                (->/when (= keycode js/ROT.VK_RETURN)
-                         (g/change-scene win-scene))
-                (->/when (= keycode js/ROT.VK_ESCAPE)
-                         (g/change-scene lose-scene)))))})
+  (render [_ {:keys [display] :as game}]
+    (doseq [[[x y] tile] (get-in game [:scene :level])]
+      (d/draw-tile! display x y tile)))
+
+  (handle-input [_ game [event-type keycode]]
+    (-> game
+      (->/when (= event-type :key-down)
+               (->/when (= keycode js/ROT.VK_RETURN)
+                        (g/change-scene win-scene))
+               (->/when (= keycode js/ROT.VK_ESCAPE)
+                        (g/change-scene lose-scene)))))
+
+  (exit [_ game] game))
+
+(def floor-tile (ruin/tile
+                  (ruin/glyph :char ".")))
+
+(def wall-tile (ruin/tile
+                  (ruin/glyph :char "#"
+                              :foreground "goldenrod")))
+
+(defn play-scene
+  []
+  (->PlayScene
+    (generate/cellular
+      :width 80
+      :height 24
+      :iterations 3
+      :conversion {1 floor-tile
+                   0 wall-tile})))
 
 (def win-scene
   {:render

@@ -5,6 +5,27 @@
   (:require-macros [lonocloud.synthread :as ->]
                    [cljs.core.async.macros :refer [go]]))
 
+;
+; Miscellanea
+;
+(defn glyph
+  [& {:as properties}]
+  (->
+    {:char " "
+     :foreground "white"
+     :background "black"}
+    (merge properties))) 
+
+(defn tile
+  [glyph]
+  {:glyph glyph})
+
+(def null-tile (tile (glyph :char ".")))
+
+;
+; Core engine structure
+;
+
 (set! *print-fn*
       (fn [& args]
         (->> args (map str) (interpose " ") (apply str) (.log js/console))))

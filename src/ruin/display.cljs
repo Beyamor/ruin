@@ -22,3 +22,7 @@
 (defn clear!
   [{:keys [display]}]
   (.clear display))
+
+(defn draw-tile!
+  [display x y {{:keys [char foreground background]} :glyph}]
+  (draw-text! display x y char :foreground foreground :background background))
