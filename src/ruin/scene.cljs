@@ -1,45 +1,29 @@
 (ns ruin.scene
   (:require-macros [lonocloud.synthread :as ->]))
 
-(defprotocol Scene
-  (enter [this game])
-  (render [this game])
-  (exit [this game])
-  (handle-input [this game input]))
+(defn enter
+  [{:keys [enter]
+    :or {enter identity}} game]
+  (enter game))
 
-(defn enter-map
-  [{:keys [enter]} game]
-  (-> game
-    (->/when enter enter)))
+(defn exit
+  [{:keys [exit]
+    :or {exit identity}} game]
+  (exit game))
 
-(defn render-map
+(defn handle-input
+  [{:keys [handle-input]} game event]
+  (if handle-input
+    (handle-input game event)
+    game))
+
+(defn render
   [{:keys [render]} game]
   (when render
     (render game)))
 
-(defn exit-map
-  [{:keys [exit]} game]
-  (-> game
-    (->/when exit exit)))
-
-(defn handle-input-map
-  [{:keys [handle-input]} game event]
-  (-> game
-    (->/when handle-input (handle-input event))))
-
-(extend-protocol Scene
-  cljs.core.PersistentHashMap
-  (enter [this game] (enter-map this game))
-  (render [this game] (render-map this game))
-  (exit [this game] (exit-map this game))
-  (handle-input [this game event] (handle-input-map this game event))
-
-  cljs.core.PersistentArrayMap
-  (enter [this game] (enter-map this game))
-  (render [this game] (render-map this game))
-  (exit [this game] (exit-map this game))
-  (handle-input [this game event] (handle-input-map this game event)))
-
 (defn create
-  [& {:as scene}]
-  scene)
+  [{:as scene}]
+  (->
+    {:entities (array)}
+    (merge scene)))

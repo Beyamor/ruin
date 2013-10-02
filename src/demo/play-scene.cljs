@@ -39,41 +39,37 @@
                                              (assoc :level updated-level)))))))
       (assoc game :scene))))
 
-(defrecord PlayScene
-  [level entities]
-  s/Scene
-  (enter [_ game] game)
-  (exit [_ game] game)
+(defn render
+  [{{display-width :width display-height :height :as display} :display
+    {:keys [entities] {level-width :width level-height :height :as level} :level :as scene} :scene
+    :as game}]
+  (let [player (get-player scene)
+        center-x (:x player)
+        center-y (:y player)
+        left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
+        top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))
+        tiles (get-in game [:scene :level :tiles])]
+    (doseq [x (range display-width)
+            y (range display-height)
+            :let [tile (l/get-tile level (+ left x) (+ top y))]]
+      (d/draw-tile! display x y tile))
+    (es+/do-each [e entities
+                  :let [x (:x e)
+                        y (:y e)]
+                  :when (and (>= x left) (<= x (+ left display-width))
+                             (>= y top) (<= y (+ top display-height)))]
+                 (d/draw-glyph! display (- x left) (- y top) (:glyph e)))))
 
-  (render [_ {{display-width :width display-height :height :as display} :display
-              {:keys [entities] {level-width :width level-height :height :as level} :level :as scene} :scene
-              :as game}]
-    (let [player (get-player scene)
-          center-x (:x player)
-          center-y (:y player)
-          left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
-          top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))
-          tiles (get-in game [:scene :level :tiles])]
-      (doseq [x (range display-width)
-              y (range display-height)
-              :let [tile (l/get-tile level (+ left x) (+ top y))]]
-        (d/draw-tile! display x y tile))
-      (es+/do-each [e entities
-                    :let [x (:x e)
-                          y (:y e)]
-                    :when (and (>= x left) (<= x (+ left display-width))
-                               (>= y top) (<= y (+ top display-height)))]
-                   (d/draw-glyph! display (- x left) (- y top) (:glyph e)))))
-
-  (handle-input [_ game [event-type key-code]]
-    (-> game
-      (->/when (= event-type :key-down)
-               (->/when (= key-code js/ROT.VK_LEFT) (move-player -1 0))
-               (->/when (= key-code js/ROT.VK_RIGHT) (move-player 1 0))
-               (->/when (= key-code js/ROT.VK_UP) (move-player 0 -1))
-               (->/when (= key-code js/ROT.VK_DOWN) (move-player 0 1)))
-      (->/aside game
-                (g/refresh game)))))
+(defn handle-input
+  [game [event-type key-code]]
+  (-> game
+    (->/when (= event-type :key-down)
+             (->/when (= key-code js/ROT.VK_LEFT) (move-player -1 0))
+             (->/when (= key-code js/ROT.VK_RIGHT) (move-player 1 0))
+             (->/when (= key-code js/ROT.VK_UP) (move-player 0 -1))
+             (->/when (= key-code js/ROT.VK_DOWN) (move-player 0 1)))
+    (->/aside game
+              (g/refresh game))))
 
 (defn add-entity
   [scene e]
@@ -135,6 +131,9 @@
                  (assoc :x player-x)
                  (assoc :y player-y))]
     (->
-      (->PlayScene level (array))
+      (s/create
+        {:render render
+         :handle-input handle-input
+         :level level})
       (add-entity player)
       add-fungi)))

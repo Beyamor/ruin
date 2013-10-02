@@ -28,4 +28,4 @@
 (ruin/run
   :width 80
   :height 24
-  :first-scene start-scene)
+  :first-scene (s/create start-scene))
