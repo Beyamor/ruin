@@ -4,11 +4,21 @@
             [ruin.core :as ruin]
             [ruin.scene :as s]
             [demo.entities :as es]
-            [demo.tiles :as tiles]
-            [demo.level :as l]
+            [demo.tiles :as ts]
+            [ruin.level :as l]
             [ruin.generate :as generate])
   (:require-macros [lonocloud.synthread :as ->]
                    [ruin.entities.macros :as es+]))
+
+(defn random-floor-position
+  [level]
+  (let [random-x #(rand-int (:width level))
+        random-y #(rand-int (:height level))
+        tiles (:tiles level)]
+    (loop [x (random-x) y (random-y)]
+      (if (= ts/floor-tile (l/get-tile level x y))
+        [x y]
+        (recur (random-x) (random-y))))))
 
 (defn get-player
   [{:keys [entities] :as scene}]
@@ -49,11 +59,8 @@
         left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
         top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))
         tiles (get-in game [:scene :level :tiles])]
-    (doseq [x (range display-width)
-            y (range display-height)
-            :let [tile (l/get-tile level (+ left x) (+ top y))]]
-      (d/draw-tile! display x y tile))
-    (s/render-entities scene display :left left :top top)))
+    (l/draw-tiles level display :left left :top top)
+    (s/draw-entities scene display :left left :top top)))
 
 (defn handle-input
   [game [event-type key-code]]
@@ -92,9 +99,9 @@
 
 (defn random-free-position
   [{:keys [level] :as scene}]
-  (loop [[some-x some-y] (l/random-floor-position level)]
+  (loop [[some-x some-y] (random-floor-position level)]
     (if (entity-at-position? scene some-x some-y)
-      (recur (l/random-floor-position level))
+      (recur (random-floor-position level))
       [some-x some-y])))
 
 (defn add-fungi
@@ -112,16 +119,14 @@
   []
   (let [width 200
         height 200
-        level {:width width
-               :height height
-               :tiles
-               (generate/cellular
-                 :width width
-                 :height height
-                 :iterations 3
-                 :val->tile {1 tiles/floor-tile
-                             0 tiles/wall-tile})}
-        [player-x player-y] (l/random-floor-position level)
+        level (l/create width height
+                        (generate/cellular
+                          :width width
+                          :height height
+                          :iterations 3
+                          :val->tile {1 ts/floor-tile
+                                      0 ts/wall-tile}))
+        [player-x player-y] (random-floor-position level)
         player (-> (es/player)
                  (assoc :x player-x)
                  (assoc :y player-y))]

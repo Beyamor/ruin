@@ -6,7 +6,6 @@
             [ruin.scene :as s]
             [demo.entities :as es]
             [demo.tiles :as tiles]
-            [demo.level :as l]
             [ruin.generate :as generate])
   (:require-macros [lonocloud.synthread :as ->]))
 

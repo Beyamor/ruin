@@ -30,7 +30,7 @@
     {:entities (array)}
     (merge scene)))
 
-(defn render-entities
+(defn draw-entities
   [scene
    {display-width :width display-height :height :as display}
    & {:keys [left top]

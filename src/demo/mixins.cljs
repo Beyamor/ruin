@@ -1,5 +1,13 @@
 (ns demo.mixins
-  (:require [demo.level :as l]))
+  (:require [ruin.level :as l]
+            [demo.tiles :as ts])
+  (:require-macros [lonocloud.synthread :as ->]))
+
+(defn dig
+  [level x y]
+  (-> level
+    (->/when (:diggable? (l/get-tile level x y))
+             (l/set-tile x y ts/floor-tile))))
 
 (def is-player
   {:name :is-player
@@ -17,4 +25,4 @@
                     (assoc :x x)
                     (assoc :y y))}
          (:diggable? tile)
-         {:level (l/dig level x y)})))})
+         {:level (dig level x y)})))})
