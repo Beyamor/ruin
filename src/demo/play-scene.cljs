@@ -53,12 +53,7 @@
             y (range display-height)
             :let [tile (l/get-tile level (+ left x) (+ top y))]]
       (d/draw-tile! display x y tile))
-    (es+/do-each [e entities
-                  :let [x (:x e)
-                        y (:y e)]
-                  :when (and (>= x left) (<= x (+ left display-width))
-                             (>= y top) (<= y (+ top display-height)))]
-                 (d/draw-glyph! display (- x left) (- y top) (:glyph e)))))
+    (s/render-entities scene display :left left :top top)))
 
 (defn handle-input
   [game [event-type key-code]]
