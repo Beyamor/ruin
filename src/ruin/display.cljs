@@ -25,6 +25,10 @@
   [{:keys [display]}]
   (.clear display))
 
+(defn draw-char!
+  [{:keys [display]} x y char & {{:keys [foreground background]} :glyph}]
+  (.draw display x y char foreground background))
+
 (defn draw-tile!
   [{:keys [display]} x y {{:keys [char foreground background]} :glyph}]
   (.draw display x y char foreground background))

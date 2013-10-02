@@ -38,37 +38,42 @@
 
 (letfn [(move-camera [game dx dy]
           (-> game
-            (->/in [:camera]
+            (->/in [:scene :center]
                    (->/in [:x]
                           (+ dx)
                           (max 0)
-                          (min (get-in game [:scene :level :width])))
+                          (min (dec (get-in game [:scene :level :width]))))
                    (->/in [:y]
                           (+ dy)
                           (max 0)
-                          (min (get-in game [:scene :level :height]))))))]
+                          (min (dec (get-in game [:scene :level :height])))))))]
   (defrecord PlayScene
-    [level]
+    [level center]
     s/Scene
     (enter [_ game] game)
-    (render [_ {:keys [display] {cam-x :x cam-y :y} :camera :as game}]
-      (let [min-x cam-x
-            max-x (+ cam-x (:width display))
-            min-y cam-y
-            max-y (+ cam-y (:height display))
+    (exit [_ game] game)
+
+    (render [_ {{display-width :width display-height :height :as display} :display
+                {{center-x :x center-y :y} :center
+                 {level-width :width level-height :height} :level} :scene
+                :as game}]
+      (let [left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
+            top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))
             tiles (get-in game [:scene :level :tiles])]
-        (doseq [x (range min-x max-x)
-                y (range min-y max-y)
-                :let [tile (get-in tiles [x y])]]
-          (d/draw-tile! display (- x min-x) (- y min-y) tile))))
+        (doseq [x (range display-width)
+                y (range display-height)
+                :let [tile (get-in tiles [(+ left x) (+ top y)])]]
+          (d/draw-tile! display x y tile))
+        (d/draw-char! display (- center-x left) (- center-y top) "@"
+                      :foreground "white" :background "black")))
+
     (handle-input [_ game [event-type key-code]]
       (-> game
         (->/when (= event-type :key-down)
                  (->/when (= key-code js/ROT.VK_LEFT) (move-camera -1 0))
                  (->/when (= key-code js/ROT.VK_RIGHT) (move-camera 1 0))
                  (->/when (= key-code js/ROT.VK_UP) (move-camera 0 -1))
-                 (->/when (= key-code js/ROT.VK_DOWN) (move-camera 0 1)))))
-    (exit [_ game] game)))
+                 (->/when (= key-code js/ROT.VK_DOWN) (move-camera 0 1)))))))
 
 (defn play-scene
   []
@@ -83,7 +88,8 @@
          :height height
          :iterations 3
          :val->tile {1 floor-tile
-                     0 wall-tile})})))
+                     0 wall-tile})}
+      {:x 0 :y 0})))
 
 (ruin/run
   :width 80
