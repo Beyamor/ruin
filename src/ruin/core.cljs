@@ -45,7 +45,7 @@
        (let [game (atom (g/create width height))
              key-events (watch-key-events)]
          (.appendChild (.-body js/document) (-> @game :container))
-         (swap! game g/switch-scene first-scene)
+         (swap! game g/change-scene first-scene)
          (go (loop [event (<! key-events)]
                (swap! game handle-input event)
                (recur (<! key-events))))))))

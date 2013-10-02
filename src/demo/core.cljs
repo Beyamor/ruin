@@ -19,7 +19,7 @@
      (-> game
        (->/when (and (= event-type :key-down)
                      (= keycode js/ROT.VK_RETURN))
-                (g/switch-scene play-scene))))})
+                (g/change-scene play-scene))))})
 
 (def play-scene
   {:render
@@ -34,9 +34,9 @@
      (-> game
        (->/when (= event-type :key-down)
                 (->/when (= keycode js/ROT.VK_RETURN)
-                         (g/switch-scene win-scene))
+                         (g/change-scene win-scene))
                 (->/when (= keycode js/ROT.VK_ESCAPE)
-                         (g/switch-scene lose-scene)))))})
+                         (g/change-scene lose-scene)))))})
 
 (def win-scene
   {:render

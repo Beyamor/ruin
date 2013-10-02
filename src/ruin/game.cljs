@@ -10,7 +10,7 @@
     {:display display
      :container (:container display)}))
 
-(defn switch-scene
+(defn change-scene
   [{old-scene :scene :as game} new-scene]
   (-> game
     (->/when old-scene
