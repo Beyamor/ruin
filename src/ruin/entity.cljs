@@ -3,6 +3,10 @@
   (:require [ruin.core :as core])
   (:require-macros [lonocloud.synthread :as ->]))
 
+(def id-store (atom 0))
+
+(def next-id #(swap! id-store inc))
+
 (defn add-mixin-properties
   [e mixins]
   (reduce
@@ -26,11 +30,12 @@
     e mixins))
 
 (defn create
-  [& {:keys [x y name mixins]
+  [& {:keys [id x y name mixins]
       :or {x 0 y 0 name "" mixins []}
       :as properties}]
   (->
-    {:x x
+    {:id id
+     :x x
      :y y
      :name name
      :glyph (apply-map core/glyph properties)
@@ -43,6 +48,11 @@
                        (:group mixin)))}
     (add-mixin-properties mixins)
     (init-mixins mixins)))
+
+(defn define
+  [& properties]
+  (fn []
+    (apply create :id (next-id) properties)))
 
 (defn has-mixin?
   [e mixin]

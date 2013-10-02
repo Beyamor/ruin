@@ -1,6 +1,10 @@
 (ns demo.mixins
   (:require [demo.level :as l]))
 
+(def is-player
+  {:name :is-player
+   :is-player? true})
+
 (def player-moveable
   {:name :player-moveable
    :group :moveable

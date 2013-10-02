@@ -3,13 +3,13 @@
             [ruin.entity :as e]))
 
 (def player
-  (e/create
+  (e/define
     :char "@"
     :foreground "white"
     :background "black"
-    :mixins [mixins/player-moveable]))
+    :mixins [mixins/player-moveable mixins/is-player]))
 
 (def fungus
-  (e/create
+  (e/define
     :char "F"
     :foreground "green"))
