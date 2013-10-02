@@ -3,20 +3,26 @@
             [ruin.game :as g]
             [ruin.core :as ruin]
             [ruin.scene :as s]
+            [demo.entities :as es]
+            [demo.tiles :as tiles]
             [ruin.generate :as generate])
   (:require-macros [lonocloud.synthread :as ->]))
 
 ;
 ; Tiles
 ;
-(def floor-tile (ruin/tile
-                  :char "."
-                  :walkable? true))
-
-(def wall-tile (ruin/tile
-                 :char "#"
-                 :foreground "goldenrod"
-                 :diggable? true))
+; 
+; Verbin'
+;
+(defn random-floor-position
+  [level]
+  (let [random-x #(rand-int (:width level))
+        random-y #(rand-int (:height level))
+        tiles (:tiles level)]
+    (loop [x (random-x) y (random-y)]
+      (if (= tiles/floor-tile (get-in tiles [x y]))
+        [x y]
+        (recur (random-x) (random-y))))))
 
 ;
 ; Scenes
@@ -38,25 +44,27 @@
                      (= keycode js/ROT.VK_RETURN))
                 (g/change-scene (play-scene)))))})
 
-(letfn [(move-camera [game dx dy]
-          (-> game
-            (->/in [:scene :center]
-                   (->/in [:x]
-                          (+ dx)
-                          (max 0)
-                          (min (dec (get-in game [:scene :level :width]))))
-                   (->/in [:y]
-                          (+ dy)
-                          (max 0)
-                          (min (dec (get-in game [:scene :level :height])))))))]
+(letfn [(move-player [game dx dy]
+          (let [player (get-in game [:scene :player])
+                new-x (+ (:x player) dx)
+                new-y (+ (:y player) dy)
+                {updated-player :entity
+                 updated-level :level} ((:try-move player)
+                                          player (get-in game [:scene :level]) new-x new-y)]
+            (-> game
+              (->/when updated-player
+                       (assoc-in [:scene :player] updated-player))
+              (->/when updated-level
+                       (assoc-in [:scene :level] updated-level)))))]
+
   (defrecord PlayScene
-    [level center]
+    [level player]
     s/Scene
     (enter [_ game] game)
     (exit [_ game] game)
 
     (render [_ {{display-width :width display-height :height :as display} :display
-                {{center-x :x center-y :y} :center
+                {{center-x :x center-y :y} :player
                  {level-width :width level-height :height} :level} :scene
                 :as game}]
       (let [left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
@@ -72,26 +80,29 @@
     (handle-input [_ game [event-type key-code]]
       (-> game
         (->/when (= event-type :key-down)
-                 (->/when (= key-code js/ROT.VK_LEFT) (move-camera -1 0))
-                 (->/when (= key-code js/ROT.VK_RIGHT) (move-camera 1 0))
-                 (->/when (= key-code js/ROT.VK_UP) (move-camera 0 -1))
-                 (->/when (= key-code js/ROT.VK_DOWN) (move-camera 0 1)))))))
+                 (->/when (= key-code js/ROT.VK_LEFT) (move-player -1 0))
+                 (->/when (= key-code js/ROT.VK_RIGHT) (move-player 1 0))
+                 (->/when (= key-code js/ROT.VK_UP) (move-player 0 -1))
+                 (->/when (= key-code js/ROT.VK_DOWN) (move-player 0 1)))))))
 
 (defn play-scene
   []
   (let [width 200
-        height 200]
-    (->PlayScene
-      {:width width
-       :height height
-       :tiles
-       (generate/cellular
-         :width width
-         :height height
-         :iterations 3
-         :val->tile {1 floor-tile
-                     0 wall-tile})}
-      {:x 0 :y 0})))
+        height 200
+        level {:width width
+               :height height
+               :tiles
+               (generate/cellular
+                 :width width
+                 :height height
+                 :iterations 3
+                 :val->tile {1 tiles/floor-tile
+                             0 tiles/wall-tile})}
+        [player-x player-y] (random-floor-position level)
+        player (-> es/player
+                 (assoc :x player-x)
+                 (assoc :y player-y))]
+    (->PlayScene level player)))
 
 (ruin/run
   :width 80

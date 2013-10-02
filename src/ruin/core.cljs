@@ -10,12 +10,11 @@
 ; Miscellanea
 ;
 (defn glyph
-  [& {:as properties}]
-  (->
-    {:char " "
-     :foreground "white"
-     :background "black"}
-    (merge properties))) 
+  [& {:keys [char foreground background]
+      :or {char " " :foreground "white" :background "black"}}]
+  {:char char
+   :foreground foreground
+   :background background})
 
 (defn tile
   [& {:keys [walkable? diggable?]

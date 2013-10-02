@@ -10,8 +10,8 @@
       (reduce
         (fn [e [property value]]
           (-> e
-            (->/when (and (#{:name :init} property)
-                          (not (contains? e property)))
+            (->/when (not (or (#{:name :init} property)
+                              (contains? e property)))
                      (assoc property value))))
         e mixin))
     e mixins))
@@ -37,5 +37,5 @@
      :mixins (set
                (for [mixin mixins]
                  (:name mixin)))}
-     (add-mixin-properties mixins)
-     (init-mixins mixins)))
+    (add-mixin-properties mixins)
+    (init-mixins mixins)))
