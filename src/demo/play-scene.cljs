@@ -7,7 +7,8 @@
             [demo.tiles :as tiles]
             [demo.level :as l]
             [ruin.generate :as generate])
-  (:require-macros [lonocloud.synthread :as ->]))
+  (:require-macros [lonocloud.synthread :as ->]
+                   [ruin.entities.macros :as es+]))
 
 (defn get-player
   [{:keys [entities] :as scene}]
@@ -57,13 +58,12 @@
               y (range display-height)
               :let [tile (l/get-tile level (+ left x) (+ top y))]]
         (d/draw-tile! display x y tile))
-      (dotimes [i (alength entities)]
-        (let [e (aget entities i)
-              x (:x e)
-              y (:y e)]
-          (when (and (>= x left) (<= x (+ left display-width))
-                     (>= y top) (<= y (+ top display-height)))
-            (d/draw-glyph! display (- x left) (- y top) (:glyph e)))))))
+      (es+/do-each [e entities
+                    :let [x (:x e)
+                          y (:y e)]
+                    :when (and (>= x left) (<= x (+ left display-width))
+                               (>= y top) (<= y (+ top display-height)))]
+                   (d/draw-glyph! display (- x left) (- y top) (:glyph e)))))
 
   (handle-input [_ game [event-type key-code]]
     (-> game
