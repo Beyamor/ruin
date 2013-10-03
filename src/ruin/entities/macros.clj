@@ -15,7 +15,8 @@
         es (second exprs)
         more-exprs (rest (rest exprs))
         body (expand-body (->> more-exprs (partition 2) reverse) `(do ~@body))]
-    `(let [es# ~es]
-       (dotimes [i# (alength es#)]
-         (let [~e (aget es# i#)]
+    `(let [es# ~es
+           list# (.-list es#)]
+       (dotimes [i# (alength list#)]
+         (let [~e (aget list# i#)]
            ~body)))))

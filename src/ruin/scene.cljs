@@ -63,17 +63,10 @@
                            (>= y top) (<= y (+ top display-height)))]
                (d/draw-glyph! display (- x left) (- y top) (:glyph e))))
 
-(defn- update-entity-at-index
-  [scene index updated-entity]
-  (aset (:entities scene) index updated-entity)
-  scene)
-
 (defn- update-entity
   [scene updated-entity]
-  (update-entity-at-index
-    scene
-    (es/index-of (:entities scene) updated-entity)
-    updated-entity))
+  (es/update! (:entities scene) updated-entity)
+  scene)
 
 (defn update
   [scene {:keys [entity-update level-update entity-removal entity-creation]}]
@@ -89,10 +82,10 @@
 
 (defn update-by-mixins
   [scene mixin f]
-  (let [entities (:entities scene)]
+  (let [entity-list (.-list (:entities scene))]
     (loop [i 0 scene scene]
-      (if (< i (alength entities))
-        (let [entity (aget entities i)]
+      (if (< i (alength entity-list))
+        (let [entity (aget entity-list i)]
           (->>
             (-> scene
               (->/when (e/has-mixin? entity mixin)
@@ -103,10 +96,11 @@
 
 (defn entity-at-position
   [{:keys [entities]} x y]
-  (loop [i 0]
-    (when (< i (alength entities))
-      (let [entity (aget entities i)]
-        (if (and (= (:x entity) x)
-                 (= (:y entity) y))
-          entity
-          (recur (inc i)))))))
+  (let [entity-list (.-list entities)]
+    (loop [i 0]
+      (when (< i (alength entity-list))
+        (let [entity (aget entity-list i)]
+          (if (and (= (:x entity) x)
+                   (= (:y entity) y))
+            entity
+            (recur (inc i))))))))
