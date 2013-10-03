@@ -91,11 +91,11 @@
           (->>
             (-> scene
               (->/when (e/has-mixin? entity mixin)
-                       (->/let [{:keys [update-entity update-level]} (f entity scene)]
-                               (->/when update-entity
-                                        (update-entity-at-index i update-entity))
-                               (->/when update-level
-                                        (assoc :level update-level)))))
+                       (->/let [{:keys [entity-update level-update]} (f entity scene)]
+                               (->/when entity-update
+                                        (update-entity-at-index i entity-update))
+                               (->/when level-update
+                                        (assoc :level level-update)))))
             (recur (inc i))))
         scene))))
 
