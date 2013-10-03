@@ -1,7 +1,10 @@
 (ns demo.mixins
+  (:use [cljs.core.async :only [<! timeout]])
   (:require [ruin.level :as l]
             [demo.tiles :as ts]
+            [ruin.game :as g]
             [ruin.scene :as s])
+  (:use-macros [cljs.core.async.macros :only [go]])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (defn dig
@@ -36,8 +39,11 @@
   {:name :fungus-actor
    :group :actor
    :act
-   (fn [e scene]
-     {:update-entity
-      (-> e
-        (assoc :x (+ -1 (rand-int 3)))
-        (assoc :y (+ -1 (rand-int 3))))})})
+   (fn [e game]
+     (go
+       (<! (timeout 10))
+       (g/refresh game)
+       {:entity-update
+        (-> e
+          (update-in [:x] + -1 (rand-int 3))
+          (update-in [:y] + -1 (rand-int 3)))}))})

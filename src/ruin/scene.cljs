@@ -57,6 +57,31 @@
   (aset (:entities scene) index updated-entity)
   scene)
 
+(defn entity-index
+  [{:keys [entities]} entity]
+  (let [id (e/id entity)]
+    (loop [i 0]
+      (when (< i (alength entities))
+             (let [entity (aget entities i)]
+               (if (= (e/id entity) id)
+                 i
+                 (recur (inc i))))))))
+
+(defn- update-entity
+  [scene updated-entity]
+  (update-entity-at-index
+    scene
+    (entity-index scene updated-entity)
+    updated-entity))
+
+(defn update
+  [scene {:keys [entity-update level-update]}]
+  (-> scene
+    (->/when entity-update
+             (update-entity entity-update))
+    (->/when level-update
+             (assoc :level level-update))))
+
 (defn update-by-mixins
   [scene mixin f]
   (let [entities (:entities scene)]
@@ -75,13 +100,21 @@
         scene))))
 
 (defn entity-at-position?
-  [scene x y]
-  (let [entities (:entities scene)]
-    (loop [i 0]
-      (if (< i (alength entities))
-        (let [e (aget entities i)]
-          (if (and (= (:x e) x)
-                   (= (:y e) y))
-            true
-            (recur (inc i))))
-        false))))
+  [{:keys [entities]} x y]
+  (loop [i 0]
+    (if (< i (alength entities))
+      (let [entity (aget entities i)]
+        (if (and (= (:x entity) x)
+                 (= (:y entity) y))
+          true
+          (recur (inc i))))
+      false)))
+
+(defn get-by-id
+  [{:keys [entities]} id]
+  (loop [i 0]
+    (when (< i (alength entities))
+      (let [entity (aget entities i)]
+        (if (= (e/id entity) id)
+          entity
+          (recur (inc i)))))))

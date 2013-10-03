@@ -12,7 +12,7 @@
 
 (defn watch-key-events
   []
-  (let [events (chan (sliding-buffer 1))
+  (let [events (chan (sliding-buffer 2))
         bind-event (fn [event event-type]
                      (.addEventListener
                        js/window event

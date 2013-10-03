@@ -2,6 +2,7 @@
   (:use [cljs.core.async :only [chan put! <!]])
   (:require [ruin.game :as g]
             [ruin.display :as d]
+            [ruin.entity :as e]
             [ruin.core :as ruin]
             [ruin.scene :as s]
             [demo.entities :as es]
@@ -50,26 +51,37 @@
     (s/draw-entities scene display :left left :top top)))
 
 (defn go-play
-  [{:keys [key-events] :as game}]
-  (go (loop [[event-type key-code] (<! key-events) game game]
-        (->>
-          (-> game
-            (->/when (= event-type :down)
-                     (->/when (= key-code js/ROT.VK_LEFT) (move-moveables -1 0))
-                     (->/when (= key-code js/ROT.VK_RIGHT) (move-moveables 1 0))
-                     (->/when (= key-code js/ROT.VK_UP) (move-moveables 0 -1))
-                     (->/when (= key-code js/ROT.VK_DOWN) (move-moveables 0 1)))
-            (->/aside game
-                      (g/refresh game)))
-          (recur (<! key-events))))))
+  [{:keys [key-events scene]
+    {:keys [scheduler]} :scene
+    :as game}]
+  (go (loop [actor-id (.next scheduler) game game]
+        (if actor-id
+          (let [actor (s/get-by-id scene actor-id)]
+            (->>
+              (let [update ((:act actor) actor game)
+                    update (if (map? update) update (<! update))]
+                (s/update scene update))
+              (assoc game :scene)
+              (recur (.next scheduler))))
+          (throw (js/Error. "Whoa, ran out of actors to update"))))))
+
+;(go (loop [[event-type key-code] (<! key-events) game game]
+;      (->>
+;        (-> game
+;          (->/when (= event-type :down)
+;                   (->/when (= key-code js/ROT.VK_LEFT) (move-moveables -1 0))
+;                   (->/when (= key-code js/ROT.VK_RIGHT) (move-moveables 1 0))
+;                   (->/when (= key-code js/ROT.VK_UP) (move-moveables 0 -1))
+;                   (->/when (= key-code js/ROT.VK_DOWN) (move-moveables 0 1)))
+;          (->/aside game
+;                    (g/refresh game)))
+;        (recur (<! key-events))))))
 
 (defn add-entity
-  [{:keys [entities scheduler engine-pulses] :as scene} entity]
+  [{:keys [entities scheduler actions] :as scene} entity]
   (.push (:entities scene) entity)
-  ;(when (e/has-mixin? entity :actor)
-  ;  (.add scheduler
-  ;        (js-obj "act"
-  ;                #(put! engine-pulses [:entity-action (e/id entity)]))))
+  (when (e/has-mixin? entity :actor)
+    (.add scheduler (e/id entity) true))
   scene)
 
 (defn entities-at-position
@@ -95,12 +107,12 @@
                     (-> (es/fungus)
                       (assoc :x x)
                       (assoc :y y)))))
-    scene (range 1000)))
+    scene (range 10)))
 
 (defn play-scene
   []
-  (let [width 200
-        height 200
+  (let [width 80
+        height 40
         level (l/create width height
                         (generate/cellular
                           :width width
@@ -113,21 +125,13 @@
                  (assoc :x player-x)
                  (assoc :y player-y))
         scheduler (js/ROT.Scheduler.Simple.)
-        engine (js/ROT.Engine. scheduler)
-        engine-pulses (chan)]
+        actions (chan)]
     (->
       (s/create
         {:render render
          :go go-play
          :level level
-         :enter (aside
-                  (.start engine))
-         :exit (aside
-                 (.lock engine))
          :scheduler scheduler
-         :engine engine
-         :engine-pulses engine-pulses})
-      (->/aside scene
-                (.start (:engine scene)))
+         :actions actions})
       (add-entity player)
       add-fungi)))
