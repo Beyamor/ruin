@@ -19,7 +19,7 @@
 (defn is-empty-floor?
   [scene x y]
   (and (= ts/floor-tile (l/get-tile (:level scene) x y))
-       (not (s/entity-at-position? scene x y))))
+       (not (s/entity-at-position scene x y))))
 
 (defn random-floor-position
   [level]
@@ -37,16 +37,6 @@
 (defn is-player-id?
   [scene id]
   (= id (e/id (get-player scene))))
-
-(defn move-moveables
-  [game dx dy]
-  (->>
-    (fn [{:keys [try-move] :as e} scene]
-      (let [new-x (+ (:x e) dx)
-            new-y (+ (:y e) dy)]
-        (try-move e scene new-x new-y)))
-    (s/update-by-mixins (:scene game) :moveable)
-    (assoc game :scene)))
 
 (defn render
   [{{display-width :width display-height :height :as display} :display

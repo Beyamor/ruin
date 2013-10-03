@@ -57,12 +57,14 @@
     updated-entity))
 
 (defn update
-  [scene {:keys [entity-update level-update]}]
+  [scene {:keys [entity-update level-update entity-removal]}]
   (-> scene
     (->/when entity-update
              (update-entity entity-update))
     (->/when level-update
-             (assoc :level level-update))))
+             (assoc :level level-update))
+    (->/when entity-removal
+             (update-in [:entities] es/remove! entity-removal))))
 
 (defn update-by-mixins
   [scene mixin f]
@@ -73,21 +75,18 @@
           (->>
             (-> scene
               (->/when (e/has-mixin? entity mixin)
-                       (->/let [{:keys [entity-update level-update]} (f entity scene)]
-                               (->/when entity-update
-                                        (update-entity-at-index i entity-update))
-                               (->/when level-update
-                                        (assoc :level level-update)))))
+                       (->/let [result (f entity scene)
+                                _ (print (keys result))]
+                               (update result))))
             (recur (inc i))))
         scene))))
 
-(defn entity-at-position?
+(defn entity-at-position
   [{:keys [entities]} x y]
   (loop [i 0]
-    (if (< i (alength entities))
+    (when (< i (alength entities))
       (let [entity (aget entities i)]
         (if (and (= (:x entity) x)
                  (= (:y entity) y))
-          true
-          (recur (inc i))))
-      false)))
+          entity
+          (recur (inc i)))))))

@@ -3,7 +3,8 @@
   (:require [ruin.level :as l]
             [demo.tiles :as ts]
             [ruin.game :as g]
-            [ruin.scene :as s])
+            [ruin.scene :as s]
+            [ruin.entity :as e])
   (:use-macros [cljs.core.async.macros :only [go]])
   (:require-macros [lonocloud.synthread :as ->]))
 
@@ -29,45 +30,55 @@
            :else (recur (<! key-events)))
           (recur (<! key-events))))))
 
-(defn move
-  [e {:keys [level] :as scene} dx dy]
-  (let [x (+ (:x e) dx)
-        y (+ (:y e) dy)]
-  (when-not (s/entity-at-position? scene x y)
-       (let [tile (l/get-tile level x y)]
-         (cond
-           (:walkable? tile)
-           {:entity-update
-            (-> e
-              (assoc :x x)
-              (assoc :y y))}
+(defn try-move
+  [entity {:keys [level] :as scene} dx dy]
+  (let [x (+ (:x entity) dx)
+        y (+ (:y entity) dy)]
+    (let [tile (l/get-tile level x y)
+          target (s/entity-at-position scene x y)]
+      (cond
+        ; target and we can attack, do so
+        (and target (e/has-mixin? entity :attacker))
+        (e/call entity :attack target)
 
-           (:diggable? tile)
-           {:level-update
-            (dig level x y)})))))
+        ; target and we can't attack, do nothing
+        target
+        nil
+
+        ; if the tile's free, walk on it
+        (:walkable? tile)
+        {:entity-update
+         (-> entity
+           (assoc :x x)
+           (assoc :y y))}
+
+        ; otherwise, try digging it
+        (:diggable? tile)
+        {:level-update
+         (dig level x y)}))))
 
 (def player-actor
   {:name :player-actor
    :group :actor
    :act
-   (fn [e {:keys [scene key-events]} x y]
+   (fn [this {:keys [scene key-events]} x y]
      (go (let [[dx dy] (<! (get-player-movement-direction key-events))]
-           (move e scene dx dy))))})
+           (try-move this scene dx dy))))})
 
 (def destructible
-  {:name :descructible
+  {:name :destructible
    :init #(assoc % :hp 1)
    :take-damage
-   (fn [me damage]
-     (let [new-hp (- (:hp me) damage)]
+   (fn [this damage]
+     (let [new-hp (- (:hp this) damage)]
        (if (> new-hp 0)
-         {:entity-update (assoc me :hp new-hp)}
-         {:entity-removal me})))})
+         {:entity-update (assoc this :hp new-hp)}
+         {:entity-removal this})))})
 
 (def simple-attacker
   {:name :simple-attacker
    :group :attacker
    :attack
-   (fn [target]
-     (when (e/has-mixin? target)
+   (fn [this target]
+     (when (e/has-mixin? target :destructible)
        (e/call target :take-damage 1)))})
