@@ -7,7 +7,7 @@
     :char "@"
     :foreground "white"
     :background "black"
-    :mixins [mixins/player-moveable mixins/is-player]))
+    :mixins [mixins/player-actor mixins/is-player]))
 
 (def fungus
   (e/define

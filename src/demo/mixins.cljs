@@ -17,33 +17,49 @@
   {:name :is-player
    :is-player? true})
 
-(def player-moveable
-  {:name :player-moveable
-   :group :moveable
-   :try-move
-   (fn [e {:keys [level] :as scene} x y]
-     (when-not (s/entity-at-position? scene x y)
+(defn get-player-movement-direction
+  [key-events]
+  (go (loop [[event-type key-code] (<! key-events)]
+        (if (= :down event-type)
+         (cond 
+           (= key-code js/ROT.VK_LEFT) [-1 0]
+           (= key-code js/ROT.VK_RIGHT) [1 0]
+           (= key-code js/ROT.VK_UP) [0 -1]
+           (= key-code js/ROT.VK_DOWN) [0 1]
+           :else (recur (<! key-events)))
+          (recur (<! key-events))))))
+
+(defn move
+  [e {:keys [level] :as scene} dx dy]
+  (let [x (+ (:x e) dx)
+        y (+ (:y e) dy)]
+  (when-not (s/entity-at-position? scene x y)
        (let [tile (l/get-tile level x y)]
          (cond
            (:walkable? tile)
-           {:update-entity
+           {:entity-update
             (-> e
               (assoc :x x)
               (assoc :y y))}
 
            (:diggable? tile)
-           {:update-level
-            (dig level x y)}))))})
+           {:level-update
+            (dig level x y)})))))
+
+(def player-actor
+  {:name :player-actor
+   :group :actor
+   :act
+   (fn [e {:keys [scene key-events]} x y]
+     (go (let [[dx dy] (<! (get-player-movement-direction key-events))]
+           (move e scene dx dy))))})
 
 (def fungus-actor
   {:name :fungus-actor
    :group :actor
    :act
    (fn [e game]
-     (go
-       (<! (timeout 10))
-       (g/refresh game)
-       {:entity-update
-        (-> e
-          (update-in [:x] + -1 (rand-int 3))
-          (update-in [:y] + -1 (rand-int 3)))}))})
+     {:entity-update
+      (-> e
+        (update-in [:x] + -1 (rand-int 3))
+        (update-in [:y] + -1 (rand-int 3)))})})

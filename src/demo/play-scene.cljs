@@ -27,6 +27,10 @@
 (def get-player
   #(s/first-entity-with % :is-player?))
 
+(defn is-player-id?
+  [scene id]
+  (= id (e/id (get-player scene))))
+
 (defn move-moveables
   [game dx dy]
   (->>
@@ -56,7 +60,10 @@
     :as game}]
   (go (loop [actor-id (.next scheduler) game game]
         (if actor-id
-          (let [actor (s/get-by-id scene actor-id)]
+          (let [actor (s/get-by-id scene actor-id)
+                is-player? (is-player-id? (:scene game) actor-id)]
+            (when is-player?
+              (g/refresh game))
             (->>
               (let [update ((:act actor) actor game)
                     update (if (map? update) update (<! update))]
@@ -64,18 +71,6 @@
               (assoc game :scene)
               (recur (.next scheduler))))
           (throw (js/Error. "Whoa, ran out of actors to update"))))))
-
-;(go (loop [[event-type key-code] (<! key-events) game game]
-;      (->>
-;        (-> game
-;          (->/when (= event-type :down)
-;                   (->/when (= key-code js/ROT.VK_LEFT) (move-moveables -1 0))
-;                   (->/when (= key-code js/ROT.VK_RIGHT) (move-moveables 1 0))
-;                   (->/when (= key-code js/ROT.VK_UP) (move-moveables 0 -1))
-;                   (->/when (= key-code js/ROT.VK_DOWN) (move-moveables 0 1)))
-;          (->/aside game
-;                    (g/refresh game)))
-;        (recur (<! key-events))))))
 
 (defn add-entity
   [{:keys [entities scheduler actions] :as scene} entity]
@@ -107,12 +102,12 @@
                     (-> (es/fungus)
                       (assoc :x x)
                       (assoc :y y)))))
-    scene (range 10)))
+    scene (range 100)))
 
 (defn play-scene
   []
-  (let [width 80
-        height 40
+  (let [width 200
+        height 200
         level (l/create width height
                         (generate/cellular
                           :width width
