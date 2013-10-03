@@ -73,7 +73,7 @@
             (when is-player?
               (g/refresh game))
             (->>
-              (let [update ((:act actor) actor game)
+              (let [update (e/call actor :act game)
                     update (if (map? update) update (<! update))]
                 (s/update scene update))
               (assoc game :scene)
@@ -110,7 +110,7 @@
                     (-> (fungus)
                       (assoc :x x)
                       (assoc :y y)))))
-    scene (range 100)))
+    scene (range 50)))
 
 (defn play-scene
   []

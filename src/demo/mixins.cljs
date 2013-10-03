@@ -53,3 +53,21 @@
    (fn [e {:keys [scene key-events]} x y]
      (go (let [[dx dy] (<! (get-player-movement-direction key-events))]
            (move e scene dx dy))))})
+
+(def destructible
+  {:name :descructible
+   :init #(assoc % :hp 1)
+   :take-damage
+   (fn [me damage]
+     (let [new-hp (- (:hp me) damage)]
+       (if (> new-hp 0)
+         {:entity-update (assoc me :hp new-hp)}
+         {:entity-removal me})))})
+
+(def simple-attacker
+  {:name :simple-attacker
+   :group :attacker
+   :attack
+   (fn [target]
+     (when (e/has-mixin? target)
+       (e/call target :take-damage 1)))})

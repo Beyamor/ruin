@@ -60,3 +60,7 @@
   [e mixin]
   (or (contains? (:mixins e) mixin)
       (contains? (:mixin-groups e) mixin)))
+
+(defn call
+  [e property & args]
+  (apply (get e property) e args))

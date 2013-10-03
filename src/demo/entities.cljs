@@ -7,9 +7,10 @@
     :char "@"
     :foreground "white"
     :background "black"
-    :mixins [mixins/player-actor mixins/is-player]))
+    :mixins [mixins/player-actor mixins/is-player mixins/simple-attacker mixins/destructible]))
 
 (def fungus
   (e/define
     :char "F"
-    :foreground "green"))
+    :foreground "green"
+    :mixins [mixins/destructible]))
