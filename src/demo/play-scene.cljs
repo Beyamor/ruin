@@ -23,7 +23,7 @@
 (def get-player
   #(s/first-entity-with % :is-player?))
 
-(defn move-player
+(defn move-moveables
   [game dx dy]
   (->>
     (fn [{:keys [try-move] :as e} scene]
@@ -50,10 +50,10 @@
   [game [event-type key-code]]
   (-> game
     (->/when (= event-type :key-down)
-             (->/when (= key-code js/ROT.VK_LEFT) (move-player -1 0))
-             (->/when (= key-code js/ROT.VK_RIGHT) (move-player 1 0))
-             (->/when (= key-code js/ROT.VK_UP) (move-player 0 -1))
-             (->/when (= key-code js/ROT.VK_DOWN) (move-player 0 1)))
+             (->/when (= key-code js/ROT.VK_LEFT) (move-moveables -1 0))
+             (->/when (= key-code js/ROT.VK_RIGHT) (move-moveables 1 0))
+             (->/when (= key-code js/ROT.VK_UP) (move-moveables 0 -1))
+             (->/when (= key-code js/ROT.VK_DOWN) (move-moveables 0 1)))
     (->/aside game
               (g/refresh game))))
 
