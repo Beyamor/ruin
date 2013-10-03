@@ -1,6 +1,7 @@
 (ns ruin.entity
   (:use [ruin.util :only [apply-map]]
         [ruin.base :only [glyph]])
+  (:require [ruin.mixin :as mixin])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (def id-store (atom 0))
@@ -35,21 +36,22 @@
   [& {:keys [id x y name mixins]
       :or {x 0 y 0 name "" mixins []}
       :as properties}]
-  (->
-    {::id id
-     :x x
-     :y y
-     :name name
-     :glyph (apply-map glyph properties)
-     :mixins (set
-               (for [mixin mixins]
-                 (:name mixin)))
-     :mixin-groups (set
-                     (for [mixin mixins
-                           :when (:group mixin)]
-                       (:group mixin)))}
-    (add-mixin-properties mixins)
-    (init-mixins mixins)))
+  (let [mixins (map mixin/realize mixins)]
+    (->
+      {::id id
+       :x x
+       :y y
+       :name name
+       :glyph (apply-map glyph properties)
+       :mixins (set
+                 (for [mixin mixins]
+                   (:name mixin)))
+       :mixin-groups (set
+                       (for [mixin mixins
+                             :when (:group mixin)]
+                         (:group mixin)))}
+      (add-mixin-properties mixins)
+      (init-mixins mixins))))
 
 (defn define
   [& properties]

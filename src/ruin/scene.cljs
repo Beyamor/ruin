@@ -3,7 +3,8 @@
             [ruin.entity :as e]
             [ruin.entities :as es])
   (:require-macros [lonocloud.synthread :as ->]
-                   [ruin.entities.macros :as es+]))
+                   [ruin.entities.macros :as es+])
+  (:refer-clojure :exclude [remove]))
 
 (defn enter
   [{:keys [enter]
@@ -25,6 +26,24 @@
   [{:keys [render]} game]
   (when render
     (render game)))
+
+(defn add
+  [{:keys [on-add] :as scene} entity]
+  (-> scene
+    (->/when entity
+             (->/in [:entities]
+                    (es/add! entity))
+             (->/when on-add
+                      (on-add entity)))))
+
+(defn remove
+  [{:keys [on-remove] :as scene} entity]
+  (-> scene
+    (->/when entity
+             (->/in [:entities]
+                    (es/remove! entity))
+             (->/when on-remove
+                      (on-remove entity)))))
 
 (defn create
   [{:as scene}]
@@ -57,14 +76,16 @@
     updated-entity))
 
 (defn update
-  [scene {:keys [entity-update level-update entity-removal]}]
+  [scene {:keys [entity-update level-update entity-removal entity-creation]}]
   (-> scene
     (->/when entity-update
              (update-entity entity-update))
     (->/when level-update
              (assoc :level level-update))
     (->/when entity-removal
-             (update-in [:entities] es/remove! entity-removal))))
+             (remove entity-removal))
+    (->/when entity-creation
+             (add entity-creation))))
 
 (defn update-by-mixins
   [scene mixin f]
@@ -75,8 +96,7 @@
           (->>
             (-> scene
               (->/when (e/has-mixin? entity mixin)
-                       (->/let [result (f entity scene)
-                                _ (print (keys result))]
+                       (->/let [result (f entity scene)]
                                (update result))))
             (recur (inc i))))
         scene))))

@@ -9,17 +9,13 @@
             [ruin.scene :as s]
             [ruin.entities :as es]
             [demo.tiles :as ts]
+            [demo.helpers :as helpers]
             [ruin.level :as l]
             [ruin.generate :as generate])
   (:use-macros [ruin.util.macros :only [aside]]
                [cljs.core.async.macros :only [go]])
   (:require-macros [lonocloud.synthread :as ->]
                    [ruin.entities.macros :as es+]))
-
-(defn is-empty-floor?
-  [scene x y]
-  (and (= ts/floor-tile (l/get-tile (:level scene) x y))
-       (not (s/entity-at-position scene x y))))
 
 (defn random-floor-position
   [level]
@@ -64,30 +60,18 @@
               (g/refresh game))
             (->>
               (let [update (e/call actor :act game)
-                    update (if (map? update) update (<! update))]
-                (s/update scene update))
+                    update (when update (if (map? update) update (<! update)))]
+                (if update
+                  (s/update scene update)
+                  scene))
               (assoc game :scene)
               (recur (.next scheduler))))
           (throw (js/Error. "Whoa, ran out of actors to update"))))))
 
-(defn add-entity
-  [{:keys [entities scheduler] :as scene} entity]
-  (es/add! entities entity)
-  (when (e/has-mixin? entity :actor)
-    (.add scheduler (e/id entity) true))
-  scene)
-
-(defn remove-entity
-  [{:keys [entities scheduler] :as scene} entity]
-  (es/remove! entities entity)
-  (when (e/has-mixin? entity :actor)
-    (.remove scheduler (e/id entity)))
-  scene)
-
 (defn random-free-position
   [{:keys [level] :as scene}]
   (loop [[some-x some-y] (random-floor-position level)]
-    (if (is-empty-floor? scene some-x some-y)
+    (if (helpers/is-empty-floor? scene some-x some-y)
       [some-x some-y]
       (recur (random-floor-position level)))))
 
@@ -96,16 +80,16 @@
   (reduce
     (fn [scene _]
       (let [[x y] (random-free-position scene)]
-        (add-entity scene
-                    (-> (fungus)
-                      (assoc :x x)
-                      (assoc :y y)))))
+        (s/add scene
+               (-> (fungus)
+                 (assoc :x x)
+                 (assoc :y y)))))
     scene (range 50)))
 
 (defn play-scene
   []
-  (let [width 200
-        height 200
+  (let [width 100
+        height 48
         level (l/create width height
                         (generate/cellular
                           :width width
@@ -117,14 +101,20 @@
         player (-> (player)
                  (assoc :x player-x)
                  (assoc :y player-y))
-        scheduler (js/ROT.Scheduler.Simple.)
-        actions (chan)]
+        scheduler (js/ROT.Scheduler.Simple.)]
     (->
       (s/create
         {:render render
          :go go-play
          :level level
          :scheduler scheduler
-         :actions actions})
-      (add-entity player)
+         :on-add (fn [{:keys [scheduler] :as scene} entity]
+                   (when (e/has-mixin? entity :actor)
+                     (.add scheduler (e/id entity) true))
+                   scene)
+         :on-remove (fn [{:keys [scheduler] :as scene} entity]
+                      (when (e/has-mixin? entity :actor)
+                        (.remove scheduler (e/id entity)))
+                      scene)})
+      (s/add player)
       add-fungi)))
