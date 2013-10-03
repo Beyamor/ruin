@@ -3,14 +3,7 @@
 
 (defn index-of
   [entities entity]
-  (let [list (.-list entities)
-        id (e/id entity)]
-    (loop [i 0]
-      (when (< i (alength list))
-        (let [entity (aget list i)]
-          (if (= (e/id entity) id)
-            i
-            (recur (inc i))))))))
+  (aget (.-indices entities) (e/id entity)))
 
 (defn first-with
   [entities property]
@@ -24,13 +17,9 @@
 
 (defn get-by-id
   [entities id]
-  (let [list (.-list entities)]
-    (loop [i 0]
-      (when (< i (alength list))
-        (let [entity (aget list i)]
-          (if (= (e/id entity) id)
-            entity
-            (recur (inc i))))))))
+  (->>
+    (aget (.-indices entities) id)
+    (aget (.-list entities))))
 
 (defn create
   []
@@ -57,7 +46,8 @@
         (loop [index index]
           (when (< index (alength list))
             (let [id (e/id (aget list index))]
-              (aset indices id index)))))))
+              (aset indices id index)
+              (recur (inc index))))))))
   entities)
 
 (defn update!

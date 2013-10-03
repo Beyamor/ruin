@@ -40,10 +40,10 @@
   [{:keys [on-remove] :as scene} entity]
   (-> scene
     (->/when entity
-             (->/in [:entities]
-                    (es/remove! entity))
              (->/when on-remove
-                      (on-remove entity)))))
+                      (on-remove entity))
+             (->/in [:entities]
+                    (es/remove! entity)))))
 
 (defn create
   [{:as scene}]
