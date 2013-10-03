@@ -1,6 +1,7 @@
 (ns ruin.scene
   (:require [ruin.display :as d]
-            [ruin.entity :as e])
+            [ruin.entity :as e]
+            [ruin.entities :as es])
   (:require-macros [lonocloud.synthread :as ->]
                    [ruin.entities.macros :as es+]))
 
@@ -28,7 +29,7 @@
 (defn create
   [{:as scene}]
   (->
-    {:entities (array)}
+    {:entities (es/create)}
     (merge scene)))
 
 (defn draw-entities
@@ -43,35 +44,16 @@
                            (>= y top) (<= y (+ top display-height)))]
                (d/draw-glyph! display (- x left) (- y top) (:glyph e))))
 
-(defn first-entity-with
-  [{:keys [entities]} property]
-  (loop [i 0]
-    (when (< i (alength entities))
-      (let [e (aget entities i)]
-        (if (contains? e property)
-          e
-          (recur (inc i)))))))
-
 (defn- update-entity-at-index
   [scene index updated-entity]
   (aset (:entities scene) index updated-entity)
   scene)
 
-(defn entity-index
-  [{:keys [entities]} entity]
-  (let [id (e/id entity)]
-    (loop [i 0]
-      (when (< i (alength entities))
-             (let [entity (aget entities i)]
-               (if (= (e/id entity) id)
-                 i
-                 (recur (inc i))))))))
-
 (defn- update-entity
   [scene updated-entity]
   (update-entity-at-index
     scene
-    (entity-index scene updated-entity)
+    (es/index-of (:entities scene) updated-entity)
     updated-entity))
 
 (defn update
@@ -109,12 +91,3 @@
           true
           (recur (inc i))))
       false)))
-
-(defn get-by-id
-  [{:keys [entities]} id]
-  (loop [i 0]
-    (when (< i (alength entities))
-      (let [entity (aget entities i)]
-        (if (= (e/id entity) id)
-          entity
-          (recur (inc i)))))))

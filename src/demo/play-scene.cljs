@@ -1,11 +1,13 @@
 (ns demo.play-scene
-  (:use [cljs.core.async :only [chan put! <!]])
+  (:use [cljs.core.async :only [chan put! <!]]
+        [ruin.util :only [aremove]]
+        [demo.entities :only [player fungus]])
   (:require [ruin.game :as g]
             [ruin.display :as d]
             [ruin.entity :as e]
             [ruin.core :as ruin]
             [ruin.scene :as s]
-            [demo.entities :as es]
+            [ruin.entities :as es]
             [demo.tiles :as ts]
             [ruin.level :as l]
             [ruin.generate :as generate])
@@ -25,7 +27,7 @@
         (recur (random-x) (random-y))))))
 
 (def get-player
-  #(s/first-entity-with % :is-player?))
+  #(es/first-with (:entities %) :is-player?))
 
 (defn is-player-id?
   [scene id]
@@ -55,12 +57,13 @@
     (s/draw-entities scene display :left left :top top)))
 
 (defn go-play
-  [{:keys [key-events scene]
+  [{:keys [key-events]
     {:keys [scheduler]} :scene
     :as game}]
   (go (loop [actor-id (.next scheduler) game game]
         (if actor-id
-          (let [actor (s/get-by-id scene actor-id)
+          (let [{:keys [entities] :as scene} (:scene game)
+                actor (es/get-by-id entities actor-id)
                 is-player? (is-player-id? (:scene game) actor-id)]
             (when is-player?
               (g/refresh game))
@@ -73,8 +76,8 @@
           (throw (js/Error. "Whoa, ran out of actors to update"))))))
 
 (defn add-entity
-  [{:keys [entities scheduler actions] :as scene} entity]
-  (.push (:entities scene) entity)
+  [{:keys [entities scheduler] :as scene} entity]
+  (es/add! entities entity)
   (when (e/has-mixin? entity :actor)
     (.add scheduler (e/id entity) true))
   scene)
@@ -99,7 +102,7 @@
     (fn [scene _]
       (let [[x y] (random-free-position scene)]
         (add-entity scene
-                    (-> (es/fungus)
+                    (-> (fungus)
                       (assoc :x x)
                       (assoc :y y)))))
     scene (range 100)))
@@ -116,7 +119,7 @@
                           :val->tile {1 ts/floor-tile
                                       0 ts/wall-tile}))
         [player-x player-y] (random-floor-position level)
-        player (-> (es/player)
+        player (-> (player)
                  (assoc :x player-x)
                  (assoc :y player-y))
         scheduler (js/ROT.Scheduler.Simple.)
