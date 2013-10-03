@@ -1,6 +1,7 @@
 (ns demo.mixins
   (:require [ruin.level :as l]
-            [demo.tiles :as ts])
+            [demo.tiles :as ts]
+            [ruin.scene :as s])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (defn dig
@@ -17,15 +18,16 @@
   {:name :player-moveable
    :group :moveable
    :try-move
-   (fn [e {:keys [level]} x y]
-     (let [tile (l/get-tile level x y)]
-       (cond
-         (:walkable? tile)
-         {:update-entity
-          (-> e
-            (assoc :x x)
-            (assoc :y y))}
+   (fn [e {:keys [level] :as scene} x y]
+     (when-not (s/entity-at-position? scene x y)
+       (let [tile (l/get-tile level x y)]
+         (cond
+           (:walkable? tile)
+           {:update-entity
+            (-> e
+              (assoc :x x)
+              (assoc :y y))}
 
-         (:diggable? tile)
-         {:update-level
-          (dig level x y)})))})
+           (:diggable? tile)
+           {:update-level
+            (dig level x y)}))))})
