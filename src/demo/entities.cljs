@@ -12,5 +12,4 @@
 (def fungus
   (e/define
     :char "F"
-    :foreground "green"
-    :mixins [mixins/fungus-actor]))
+    :foreground "green"))

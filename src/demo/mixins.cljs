@@ -53,13 +53,3 @@
    (fn [e {:keys [scene key-events]} x y]
      (go (let [[dx dy] (<! (get-player-movement-direction key-events))]
            (move e scene dx dy))))})
-
-(def fungus-actor
-  {:name :fungus-actor
-   :group :actor
-   :act
-   (fn [e game]
-     {:entity-update
-      (-> e
-        (update-in [:x] + -1 (rand-int 3))
-        (update-in [:y] + -1 (rand-int 3)))})})
