@@ -1,14 +1,20 @@
 (ns ruin.level
+  (:use [ruin.base :only [null-tile]])
   (:require [ruin.array2d :as a2d]
             [ruin.display :as d]))
 
 (defn get-tile
-  [level x y]
-  (a2d/get (:tiles level) x y))
+  [{:keys [height width] :as level} x y]
+  (if (and (>= x 0) (< x width)
+           (>= y 0) (< y height))
+    (a2d/get (:tiles level) x y)
+    null-tile))
 
 (defn set-tile
-  [level x y tile]
-  (a2d/set! (:tiles level) x y tile)
+  [{:keys [height width] :as level} x y tile]
+  (when (and (>= x 0) (< x width)
+             (>= y 0) (< y height))
+    (a2d/set! (:tiles level) x y tile))
   level)
 
 (defn create
