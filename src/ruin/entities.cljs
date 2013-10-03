@@ -3,7 +3,7 @@
 
 (defn index-of
   [entities entity]
-  (aget (.-indices entities) (e/id entity)))
+  (get @(.-indices entities) (e/id entity)))
 
 (defn first-with
   [entities property]
@@ -18,21 +18,21 @@
 (defn get-by-id
   [entities id]
   (->>
-    (aget (.-indices entities) id)
+    (get @(.-indices entities) id)
     (aget (.-list entities))))
 
 (defn create
   []
   (js-obj
     "list" (array)
-    "indices" (js-obj)))
+    "indices" (atom {})))
 
 (defn add!
   [entities entity]
   (when entity
     (let [list (.-list entities)
           indices (.-indices entities)]
-      (aset indices (e/id entity) (alength list))
+      (swap! indices assoc (e/id entity) (alength list))
       (.push list entity)))
   entities)
 
@@ -43,10 +43,11 @@
           indices (.-indices entities)]
       (when-let [index (index-of entities entity)]
         (.splice list index 1)
+        (swap! indices dissoc (e/id entity))
         (loop [index index]
           (when (< index (alength list))
             (let [id (e/id (aget list index))]
-              (aset indices id index)
+              (swap! indices assoc id index)
               (recur (inc index))))))))
   entities)
 
