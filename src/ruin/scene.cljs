@@ -14,11 +14,11 @@
     :or {exit identity}} game]
   (exit game))
 
-(defn handle-input
-  [{:keys [handle-input]} game event]
-  (if handle-input
-    (handle-input game event)
-    game))
+(defn go
+  [{:keys [go]} game]
+  (if go
+    (go game)
+    (throw (js/Error. "Whoa, scene needs to go, baby"))))
 
 (defn render
   [{:keys [render]} game]

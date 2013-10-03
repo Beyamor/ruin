@@ -1,5 +1,6 @@
 (ns demo.core
-  (:use [demo.play-scene :only [play-scene]])
+  (:use [demo.play-scene :only [play-scene]]
+        [cljs.core.async :only [<!]])
   (:require [ruin.display :as d]
             [ruin.game :as g]
             [ruin.core :as ruin]
@@ -7,6 +8,7 @@
             [demo.entities :as es]
             [demo.tiles :as tiles]
             [ruin.generate :as generate])
+  (:use-macros [cljs.core.async.macros :only [go]])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (def start-scene
@@ -17,12 +19,13 @@
                      :foreground "yellow")
        (d/draw-text! 1 2 "Press [Enter] to start!")))
 
-   :handle-input
-   (fn [game [event-type keycode]]
-     (-> game
-       (->/when (and (= event-type :key-down)
-                     (= keycode js/ROT.VK_RETURN))
-                (g/change-scene (play-scene)))))})
+   :go
+   (fn [{:keys [key-events] :as game}]
+     (go (loop [[event-type key-code] (<! key-events)]
+           (if (and (= event-type :down)
+                    (= key-code js/ROT.VK_RETURN))
+               (g/change-scene game (play-scene))
+             (recur (<! key-events))))))})
 
 (ruin/run
   :width 80

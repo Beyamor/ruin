@@ -31,3 +31,13 @@
            (:diggable? tile)
            {:update-level
             (dig level x y)}))))})
+
+(def fungus-actor
+  {:name :fungus-actor
+   :group :actor
+   :act
+   (fn [e scene]
+     {:update-entity
+      (-> e
+        (assoc :x (+ -1 (rand-int 3)))
+        (assoc :y (+ -1 (rand-int 3))))})})

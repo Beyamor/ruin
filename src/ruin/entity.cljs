@@ -29,12 +29,14 @@
                  (init e))))
     e mixins))
 
+(def id ::id)
+
 (defn create
   [& {:keys [id x y name mixins]
       :or {x 0 y 0 name "" mixins []}
       :as properties}]
   (->
-    {:id id
+    {::id id
      :x x
      :y y
      :name name

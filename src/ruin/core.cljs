@@ -19,9 +19,9 @@
                        (fn [e]
                          (put! events
                                [event-type (.-keyCode e)]))))]
-    (bind-event "keydown" :key-down)
-    (bind-event "keyup" :key-up)
-    (bind-event "keypress" :key-press)
+    (bind-event "keydown" :down)
+    (bind-event "keyup" :up)
+    (bind-event "keypress" :press)
     events))
 
 
@@ -43,10 +43,8 @@
        (js/alert "The rot.js library isn't supported by your browser.")
 
        :else
-       (let [game (atom (g/create width height))
-             key-events (watch-key-events)]
-         (.appendChild (.-body js/document) (-> @game :container))
-         (swap! game g/change-scene first-scene)
-         (go (loop [event (<! key-events)]
-               (swap! game handle-input event)
-               (recur (<! key-events))))))))
+       (let [key-events (watch-key-events)
+             game (g/create width height key-events)]
+         (.appendChild (.-body js/document) (-> game :container))
+         (go (loop [game (g/change-scene game first-scene)]
+               (recur (<! (s/go (:scene game) game)))))))))

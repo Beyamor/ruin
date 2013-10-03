@@ -1,4 +1,5 @@
 (ns demo.play-scene
+  (:use [cljs.core.async :only [chan put! <!]])
   (:require [ruin.game :as g]
             [ruin.display :as d]
             [ruin.core :as ruin]
@@ -7,6 +8,8 @@
             [demo.tiles :as ts]
             [ruin.level :as l]
             [ruin.generate :as generate])
+  (:use-macros [ruin.util.macros :only [aside]]
+               [cljs.core.async.macros :only [go]])
   (:require-macros [lonocloud.synthread :as ->]
                    [ruin.entities.macros :as es+]))
 
@@ -46,20 +49,27 @@
     (l/draw-tiles level display :left left :top top)
     (s/draw-entities scene display :left left :top top)))
 
-(defn handle-input
-  [game [event-type key-code]]
-  (-> game
-    (->/when (= event-type :key-down)
-             (->/when (= key-code js/ROT.VK_LEFT) (move-moveables -1 0))
-             (->/when (= key-code js/ROT.VK_RIGHT) (move-moveables 1 0))
-             (->/when (= key-code js/ROT.VK_UP) (move-moveables 0 -1))
-             (->/when (= key-code js/ROT.VK_DOWN) (move-moveables 0 1)))
-    (->/aside game
-              (g/refresh game))))
+(defn go-play
+  [{:keys [key-events] :as game}]
+  (go (loop [[event-type key-code] (<! key-events) game game]
+        (->>
+          (-> game
+            (->/when (= event-type :down)
+                     (->/when (= key-code js/ROT.VK_LEFT) (move-moveables -1 0))
+                     (->/when (= key-code js/ROT.VK_RIGHT) (move-moveables 1 0))
+                     (->/when (= key-code js/ROT.VK_UP) (move-moveables 0 -1))
+                     (->/when (= key-code js/ROT.VK_DOWN) (move-moveables 0 1)))
+            (->/aside game
+                      (g/refresh game)))
+          (recur (<! key-events))))))
 
 (defn add-entity
-  [scene e]
-  (.push (:entities scene) e)
+  [{:keys [entities scheduler engine-pulses] :as scene} entity]
+  (.push (:entities scene) entity)
+  ;(when (e/has-mixin? entity :actor)
+  ;  (.add scheduler
+  ;        (js-obj "act"
+  ;                #(put! engine-pulses [:entity-action (e/id entity)]))))
   scene)
 
 (defn entities-at-position
@@ -101,11 +111,23 @@
         [player-x player-y] (random-floor-position level)
         player (-> (es/player)
                  (assoc :x player-x)
-                 (assoc :y player-y))]
+                 (assoc :y player-y))
+        scheduler (js/ROT.Scheduler.Simple.)
+        engine (js/ROT.Engine. scheduler)
+        engine-pulses (chan)]
     (->
       (s/create
         {:render render
-         :handle-input handle-input
-         :level level})
+         :go go-play
+         :level level
+         :enter (aside
+                  (.start engine))
+         :exit (aside
+                 (.lock engine))
+         :scheduler scheduler
+         :engine engine
+         :engine-pulses engine-pulses})
+      (->/aside scene
+                (.start (:engine scene)))
       (add-entity player)
       add-fungi)))

@@ -5,10 +5,11 @@
                    [cljs.core.async.macros :refer [go]]))
 
 (defn create
-  [width height]
+  [width height key-events]
   (let [display (d/create width height)]
     {:display display
-     :container (:container display)}))
+     :container (:container display)
+     :key-events key-events}))
 
 (defn refresh
   [{:keys [scene display] :as game}]
