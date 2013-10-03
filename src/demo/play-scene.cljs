@@ -16,6 +16,11 @@
   (:require-macros [lonocloud.synthread :as ->]
                    [ruin.entities.macros :as es+]))
 
+(defn is-empty-floor?
+  [scene x y]
+  (and (= ts/floor-tile (l/get-tile (:level scene) x y))
+       (not (s/entity-at-position? scene x y))))
+
 (defn random-floor-position
   [level]
   (let [random-x #(rand-int (:width level))
@@ -82,19 +87,19 @@
     (.add scheduler (e/id entity) true))
   scene)
 
-(defn entities-at-position
-  [scene x y]
-  (for [[id e] (:entities scene)
-        :when (and (= (:x e) x)
-                   (= (:y e) y))]
-    e))
+(defn remove-entity
+  [{:keys [entities scheduler] :as scene} entity]
+  (es/remove! entities entity)
+  (when (e/has-mixin? entity :actor)
+    (.remove scheduler (e/id entity)))
+  scene)
 
 (defn random-free-position
   [{:keys [level] :as scene}]
   (loop [[some-x some-y] (random-floor-position level)]
-    (if (s/entity-at-position? scene some-x some-y)
-      (recur (random-floor-position level))
-      [some-x some-y])))
+    (if (is-empty-floor? scene some-x some-y)
+      [some-x some-y]
+      (recur (random-floor-position level)))))
 
 (defn add-fungi
   [scene]
