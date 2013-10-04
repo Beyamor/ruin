@@ -5,16 +5,6 @@
   [entities entity]
   (get @(.-indices entities) (e/id entity)))
 
-(defn first-with
-  [entities property]
-  (let [list (.-list entities)]
-    (loop [i 0]
-      (when (< i (alength list))
-        (let [e (aget list i)]
-          (if (contains? e property)
-            e
-            (recur (inc i))))))))
-
 (defn get-by-id
   [entities id]
   (->>
@@ -57,3 +47,17 @@
     (when-let [index (index-of entities entity)]
       (aset (.-list entities) index entity)))
   entities)
+
+(defn first-match
+  [entities pred?]
+  (let [entity-list (.-list entities)]
+    (loop [i 0]
+      (when (< i (alength entity-list))
+        (let [entity (aget entity-list i)]
+          (if (pred? entity)
+            entity
+            (recur (inc i))))))))
+
+(defn first-with
+  [entities property]
+  (first-match entities #(contains? % property)))

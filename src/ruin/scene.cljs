@@ -82,25 +82,15 @@
 
 (defn update-by-mixins
   [scene mixin f]
-  (let [entity-list (.-list (:entities scene))]
-    (loop [i 0 scene scene]
-      (if (< i (alength entity-list))
-        (let [entity (aget entity-list i)]
-          (->>
-            (-> scene
-              (->/when (e/has-mixin? entity mixin)
-                       (->/let [result (f entity scene)]
-                               (update result))))
-            (recur (inc i))))
-        scene))))
+  (es+/each
+    [scene scene
+     entity (:entities scene)
+     :when (e/has-mixin? entity mixin)]
+    (update scene (f entity scene))))
 
 (defn entity-at-position
   [{:keys [entities]} x y]
-  (let [entity-list (.-list entities)]
-    (loop [i 0]
-      (when (< i (alength entity-list))
-        (let [entity (aget entity-list i)]
-          (if (and (= (:x entity) x)
-                   (= (:y entity) y))
-            entity
-            (recur (inc i))))))))
+  (->>
+    #(and (= (:x %) x)
+          (= (:y %) y))
+    (es/first-match entities )))
