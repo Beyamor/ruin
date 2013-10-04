@@ -74,6 +74,26 @@
     (update-visible-tiles player)
     update-explored-tiles))
 
+;
+; TODO: move this somewhere else
+;
+(defn game-over-scene
+  []
+  (s/create
+    {:render (fn [{:keys [display]}]
+               (doto display
+                 (d/draw-text! 1 1 "Game Over" :foreground "red")))
+     :go (fn [_] (chan))}))
+
+(defn acknowledge-death
+  [{:keys [key-events] :as game}]
+  (g/refresh game)
+  (go (loop [[event-type key-code] (<! key-events)]
+        (if (and (= event-type :down)
+                 (= key-code js/ROT.VK_RETURN))
+          (g/change-scene game (game-over-scene))
+          (recur (<! key-events))))))
+
 (defn go-play
   [{:keys [key-events display]
     {:keys [scheduler]} :scene
@@ -85,14 +105,18 @@
                 is-player? (:is-player? actor)]
             (when is-player?
               (g/refresh game))
-            (->
-              (let [update (e/call actor :act game)
-                    update (when update (if (map? update) update (<! update)))]
-                (s/update scene update))
-              (->/when is-player?
-                (update-seen-tiles actor))
-              (->> (assoc game :scene))
-              (->> (recur (.next scheduler)))))
+            (let [update (-> (e/call actor :act game)
+                           (->/as update
+                                  (->/when (and update (not (map? update))) <!)))
+                  player-killed? (:player-killed? update)
+                  updated-scene (-> scene
+                                  (s/update update)
+                                  (->/when is-player?
+                                           (update-seen-tiles actor)))
+                  updated-game (assoc game :scene updated-scene)]
+              (if-not player-killed?
+                (recur (.next scheduler) updated-game)
+                (<! (acknowledge-death updated-game)))))
           (throw (js/Error. "Whoa, ran out of actors to update"))))))
 
 (defn random-free-position
