@@ -56,7 +56,8 @@
           target (es/first-at-position entities x y)]
       (cond
         ; target and we can attack, do so
-        (and target (e/has-mixin? entity :attacker))
+        (and target (e/has-mixin? entity :attacker)
+             (or (e/has-mixin? entity :player-actor) (e/has-mixin? target :player-actor)))
         (e/call entity :try-attack target)
 
         ; target and we can't attack, do nothing
@@ -71,7 +72,8 @@
            (assoc :y y))}
 
         ; otherwise, try digging it
-        (:diggable? tile)
+        (and (:diggable? tile)
+             (e/has-mixin? entity :player-actor))
         {:update-level
          (dig level x y)}))))
 
