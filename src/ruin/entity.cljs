@@ -30,7 +30,11 @@
                  (init e))))
     e mixins))
 
-(def id ::id)
+(defn id
+  [entity]
+  (if (number? entity)
+    entity
+    (::id entity)))
 
 (defn create
   [& {:keys [id x y name mixins]

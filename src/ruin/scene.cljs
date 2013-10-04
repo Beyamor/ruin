@@ -48,7 +48,8 @@
 (defn create
   [{:as scene}]
   (->
-    {:entities (es/create)}
+    {:entities (es/create)
+     :messages {}}
     (merge scene)))
 
 (defn draw-entities
@@ -94,3 +95,9 @@
     #(and (= (:x %) x)
           (= (:y %) y))
     (es/first-match entities )))
+
+
+(defn send-message
+  [scene target message]
+  (let [id (e/id target)]
+    (update-in scene [:messages id] (fnil conj []) message)))
