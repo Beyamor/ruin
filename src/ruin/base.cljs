@@ -12,11 +12,12 @@
    :background background})
 
 (defn tile
-  [& {:keys [walkable? diggable?]
+  [& {:keys [walkable? diggable? blocks-light?]
       :or {walkable? false diggable? false}
       :as properties}]
   {:glyph (apply-map glyph properties)
    :walkable? walkable?
-   :diggable? diggable?})
+   :diggable? diggable?
+   :blocks-light? blocks-light?})
 
 (def null-tile (tile (glyph :char ".")))

@@ -8,4 +8,5 @@
 (def wall-tile (ruin/tile
                  :char "#"
                  :foreground "goldenrod"
-                 :diggable? true))
+                 :diggable? true
+                 :blocks-light? true))

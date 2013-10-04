@@ -11,8 +11,10 @@
              :is-player
              :attacker
              :destructible
-             :message-recipient]
+             :message-recipient
+             :sight]
     :attack-strength 10
+    :sight-radius 8
     :max-hp 40))
 
 (def fungus

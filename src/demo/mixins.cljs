@@ -159,3 +159,11 @@
   :get-messages
   (fn [this scene]
     (s/get-messages scene this)))
+
+(defmixin
+  sight
+  :group
+  :sight
+
+  :init
+  #(-> % (assoc-if-missing :sight-radius 5)))

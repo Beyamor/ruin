@@ -48,9 +48,11 @@
         center-y (:y player)
         left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
         top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))
-        tiles (get-in game [:scene :level :tiles])]
-    (l/draw-tiles level display :left left :top top :display-height (dec display-height))
-    (s/draw-entities scene display :left left :top top :display-height (dec display-height))
+        tiles (get-in game [:scene :level :tiles])
+        fov (l/fov level)
+        visible-tiles (l/visible-tiles level (:x player) (:y player) (:sight-radius player) fov)]
+    (l/draw-tiles level display :left left :top top :display-height (dec display-height) :only visible-tiles)
+    (s/draw-entities scene display :left left :top top :display-height (dec display-height) :at-positions visible-tiles)
     (doto display
       (d/draw-text! 0 (dec display-height) (str "HP: " (:hp player) "/" (:max-hp player)) )
       (print-messages (s/get-messages scene player)))))
