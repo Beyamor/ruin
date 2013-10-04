@@ -41,21 +41,40 @@
 
 (defn render
   [{{display-width :width display-height :height :as display} :display
-    {:keys [entities] {level-width :width level-height :height :as level} :level :as scene} :scene
+    {:keys [entities visible-tiles] {level-width :width level-height :height :as level} :level :as scene} :scene
     :as game}]
   (let [player (get-player scene)
         center-x (:x player)
         center-y (:y player)
         left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
-        top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))
-        tiles (get-in game [:scene :level :tiles])
-        fov (l/fov level)
-        visible-tiles (l/visible-tiles level (:x player) (:y player) (:sight-radius player) fov)]
-    (l/draw-tiles level display :left left :top top :display-height (dec display-height) :only visible-tiles)
-    (s/draw-entities scene display :left left :top top :display-height (dec display-height) :at-positions visible-tiles)
+        top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))]
+    (l/draw-tiles level display :left left :top top :display-height (dec display-height) :visible-tiles visible-tiles)
+    (s/draw-entities scene display :left left :top top :display-height (dec display-height) :visible-tiles visible-tiles)
     (doto display
       (d/draw-text! 0 (dec display-height) (str "HP: " (:hp player) "/" (:max-hp player)) )
       (print-messages (s/get-messages scene player)))))
+
+(defn update-visible-tiles
+  [{:keys [level] :as scene} player]
+  (->>
+    (l/fov level)
+    (l/visible-tiles level (:x player) (:y player) (:sight-radius player))
+    (assoc scene :visible-tiles)))
+
+(defn update-explored-tiles
+  [{:keys [visible-tiles level] :as scene}]
+  (->>
+    (reduce
+      (fn [level [x y]]
+        (l/mark-as level x y :explored?))
+      level visible-tiles)
+    (assoc scene :level)))
+
+(defn update-seen-tiles
+  [scene player]
+  (-> scene
+    (update-visible-tiles player)
+    update-explored-tiles))
 
 (defn go-play
   [{:keys [key-events display]
@@ -74,6 +93,8 @@
                 (if update
                   (s/update scene update)
                   scene))
+              (->/when is-player?
+                (update-seen-tiles actor))
               (->> (assoc game :scene))
               (->> (recur (.next scheduler)))))
           (throw (js/Error. "Whoa, ran out of actors to update"))))))
@@ -125,6 +146,8 @@
          :on-remove (fn [{:keys [scheduler] :as scene} entity]
                       (when (e/has-mixin? entity :actor)
                         (.remove scheduler (e/id entity)))
-                      scene)})
+                      scene)
+         :visible-tiles #{}})
       (s/add player)
+      (update-seen-tiles player)
       add-fungi)))

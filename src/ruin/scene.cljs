@@ -55,7 +55,7 @@
 (defn draw-entities
   [scene
    display
-   & {:keys [left top display-height display-width at-positions]
+   & {:keys [left top display-height display-width visible-tiles]
       :or {left 0 :right 0}}]
   (let [display-width (or display-width (:width display))
         display-height (or display-height (:height display))]
@@ -64,7 +64,7 @@
                         y (:y e)]
                   :when (and (>= x left) (<= x (+ left display-width))
                              (>= y top) (<= y (+ top display-height))
-                             (or (nil? at-positions) (contains? at-positions [x y])))]
+                             (or (nil? visible-tiles) (contains? visible-tiles [x y])))]
                  (d/draw-glyph! display (- x left) (- y top) (:glyph e)))))
 
 (defn send-message

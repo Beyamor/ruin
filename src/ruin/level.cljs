@@ -5,17 +5,24 @@
 
 (defn get-tile
   [{:keys [height width] :as level} x y]
-  (if (and (>= x 0) (< x width)
+  (if (and x y
+           (>= x 0) (< x width)
            (>= y 0) (< y height))
     (a2d/get (:tiles level) x y)
     null-tile))
 
 (defn set-tile
   [{:keys [height width] :as level} x y tile]
-  (when (and (>= x 0) (< x width)
+  (when (and x y
+             (>= x 0) (< x width)
              (>= y 0) (< y height))
     (a2d/set! (:tiles level) x y tile))
   level)
+
+(defn mark-as
+  [level x y mark]
+  (set-tile level x y
+            (assoc (get-tile level x y) mark true)))
 
 (defn create
   [width height tiles]
@@ -26,16 +33,21 @@
 (defn draw-tiles
   [level
    display
-   & {:keys [top left display-width display-height only] :or {left 0 top 0}}]
+   & {:keys [top left display-width display-height visible-tiles] :or {left 0 top 0}}]
   (let [display-width (or display-width (:width display))
         display-height (or display-height (:height display))]
-    (if only
-      (doseq [[x y] only]
-        (d/draw-tile! display (- x left) (- y top) (get-tile level x y)))
-      (doseq [x (range display-width)
-              y (range display-height)
-              :let [tile (get-tile level (+ left x) (+ top y))]]
-        (d/draw-tile! display x y tile)))))
+    (doseq [x (range display-width)
+            y (range display-height)
+            :let [tile-x (+ left x)
+                  tile-y (+ top y)
+                  tile (get-tile level tile-x tile-y)]
+            :when (:explored? tile)
+            :let [foreground (if (or (nil? visible-tiles) (contains? visible-tiles [tile-x tile-y]))
+                               (get-in tile [:glyph :foreground])
+                               "darkGray")]]
+      (d/draw-glyph! display x y (-> tile
+                                   :glyph
+                                   (assoc :foreground foreground))))))
 
 (defn fov
   [level & {:keys [vision]
