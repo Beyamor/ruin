@@ -1,4 +1,5 @@
 (ns ruin.entities
+  (:use [clojure.set :only [union]])
   (:require [ruin.entity :as e]))
 
 (defn index-of
@@ -100,3 +101,14 @@
 (defn first-at-position
   [entities x y]
   (first (at-position entities x y)))
+
+(defn within-radius
+  [entities center-x center-y radius]
+  (apply union
+         (for [x (range (- center-x radius) (inc (+ center-x radius)))
+               y (range (- center-y radius) (inc (+ center-y radius)))]
+           (at-position entities x y))))
+
+(defn nearby
+  [entities center-x center-y]
+  (within-radius entities center-x center-y 5))

@@ -108,7 +108,10 @@
            (->
              (fungus)
              (assoc :x x)
-             (assoc :y y))})))))
+             (assoc :y y))
+           :send
+           (for [entity (es/nearby (:entities scene) x y)]
+             [entity "The fungus is spreading!"])})))))
 
 
 (defmixin
