@@ -1,6 +1,7 @@
 (ns demo.mixins
   (:use [cljs.core.async :only [<! timeout]]
-        [demo.entities :only [fungus]])
+        [demo.entities :only [fungus]]
+        [ruin.util :only [assoc-if-missing]])
   (:require [ruin.level :as l]
             [demo.tiles :as ts]
             [ruin.game :as g]
@@ -19,7 +20,8 @@
 
 (defmixin
   is-player
-  :is-player? true)
+  :is-player?
+  true)
 
 (defn get-player-movement-direction
   [key-events]
@@ -62,7 +64,9 @@
 
 (defmixin
   player-actor
-  :group :actor
+  :group
+  :actor
+
   :act
   (fn [this {:keys [scene key-events]}]
     (go (let [[dx dy] (<! (get-player-movement-direction key-events))]
@@ -70,8 +74,12 @@
 
 (defmixin
   fungus-actor
-  :group :actor
-  :init #(assoc % :growths 5)
+  :group
+  :actor
+
+  :init
+  #(assoc % :growths 5)
+
   :act
   (fn [{:keys [growths] :as this} {:keys [scene]}]
     (when (and (pos? growths)
@@ -91,7 +99,11 @@
 
 (defmixin
   destructible
-  :init #(assoc % :hp 1)
+  :init
+  #(-> %
+     (assoc-if-missing :hp 10)
+     (assoc-if-missing :defense 0))
+
   :take-damage
   (fn [this damage]
     (let [new-hp (- (:hp this) damage)]
@@ -100,9 +112,20 @@
         {:entity-removal this}))))
 
 (defmixin
-  simple-attacker
-  :group :attacker
+  attacker
+  :group
+  :attacker
+
+  :init
+  #(-> %
+     (assoc-if-missing :attack-strength 1))
+
   :attack
   (fn [this target]
     (when (e/has-mixin? target :destructible)
-      (e/call target :take-damage 1))))
+      (let [damage (->
+                     (- (:attack-strength this) (:defense target))
+                     (max 0)
+                     rand-int
+                     inc)]
+        (e/call target :take-damage damage)))))

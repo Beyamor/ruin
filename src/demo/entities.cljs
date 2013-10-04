@@ -8,12 +8,15 @@
     :background "black"
     :mixins [:player-actor
              :is-player
-             :simple-attacker
-             :destructible]))
+             :attacker
+             :destructible]
+    :attack-strength 10
+    :max-hp 40))
 
 (def fungus
   (e/define
     :char "F"
     :foreground "green"
     :mixins [:destructible
-             :fungus-actor]))
+             :fungus-actor]
+    :max-hp 10))

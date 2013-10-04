@@ -38,18 +38,19 @@
       :as properties}]
   (let [mixins (map mixin/realize mixins)]
     (->
-      {::id id
-       :x x
-       :y y
-       :name name
-       :glyph (apply-map glyph properties)
-       :mixins (set
-                 (for [mixin mixins]
-                   (:name mixin)))
-       :mixin-groups (set
-                       (for [mixin mixins
-                             :when (:group mixin)]
-                         (:group mixin)))}
+      (merge properties
+             {::id id
+              :x x
+              :y y
+              :name name
+              :glyph (apply-map glyph properties)
+              :mixins (set
+                        (for [mixin mixins]
+                          (:name mixin)))
+              :mixin-groups (set
+                              (for [mixin mixins
+                                    :when (:group mixin)]
+                                (:group mixin)))})
       (add-mixin-properties mixins)
       (init-mixins mixins))))
 
