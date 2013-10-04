@@ -30,10 +30,6 @@
 (def get-player
   #(es/first-with (:entities %) :is-player?))
 
-(defn is-player-id?
-  [scene id]
-  (= id (e/id (get-player scene))))
-
 (defn print-messages
   [display messages]
   (dotimes [i (count messages)]
@@ -86,15 +82,13 @@
         (if actor-id
           (let [{:keys [entities] :as scene} (:scene game)
                 actor (es/get-by-id entities actor-id)
-                is-player? (is-player-id? (:scene game) actor-id)]
+                is-player? (:is-player? actor)]
             (when is-player?
               (g/refresh game))
             (->
               (let [update (e/call actor :act game)
                     update (when update (if (map? update) update (<! update)))]
-                (if update
-                  (s/update scene update)
-                  scene))
+                (s/update scene update))
               (->/when is-player?
                 (update-seen-tiles actor))
               (->> (assoc game :scene))

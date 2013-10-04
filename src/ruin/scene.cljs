@@ -85,20 +85,22 @@
           removed-entity :remove
           updated-level :update-level
           messages :send
-          messages-to-clear :clear-messages}]
+          messages-to-clear :clear-messages
+          :as updates}]
   (-> scene
-    (->/when updated-entity
-             (update-entity updated-entity))
-    (->/when updated-level
-             (assoc :level updated-level))
-    (->/when removed-entity
-             (remove removed-entity))
-    (->/when added-entity
-             (add added-entity))
-    (->/when messages-to-clear
-             (clear-messages messages-to-clear))
-    (->/when messages
-             (send-messages messages))))
+    (->/when updates
+             (->/when updated-entity
+                      (update-entity updated-entity))
+             (->/when updated-level
+                      (assoc :level updated-level))
+             (->/when removed-entity
+                      (remove removed-entity))
+             (->/when added-entity
+                      (add added-entity))
+             (->/when messages-to-clear
+                      (clear-messages messages-to-clear))
+             (->/when messages
+                      (send-messages messages)))))
 
 (defn update-by-mixins
   [scene mixin f]
