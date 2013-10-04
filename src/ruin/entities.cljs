@@ -15,14 +15,39 @@
   []
   (js-obj
     "list" (array)
-    "indices" (atom {})))
+    "indices" (atom {})
+    "positions" (atom {})))
+
+(defn add-to-positions
+  [positions entity]
+  (update-in positions [(:x entity) (:y entity)] (fnil conj #{}) (e/id entity)))
+
+(defn remove-from-positions
+  [positions entity]
+  (let [x (:x entity)
+        y (:y entity)
+        id (e/id entity)]
+    (if (get-in positions [x y id])
+      (update-in positions [x y] disj id)
+      positions)))
+
+(defn update-position
+  [positions old-entity new-entity]
+  (if (or (not= (:x old-entity) (:x new-entity))
+          (not= (:y old-entity) (:y new-entity)))
+    (-> positions
+      (remove-from-positions old-entity)
+      (add-to-positions new-entity))
+    positions))
 
 (defn add!
   [entities entity]
   (when entity
     (let [list (.-list entities)
-          indices (.-indices entities)]
+          indices (.-indices entities)
+          positions (.-positions entities)]
       (swap! indices assoc (e/id entity) (alength list))
+      (swap! positions add-to-positions entity)
       (.push list entity)))
   entities)
 
@@ -30,10 +55,12 @@
   [entities entity]
   (when entity
     (let [list (.-list entities)
-          indices (.-indices entities)]
+          indices (.-indices entities)
+          positions (.-positions entities)]
       (when-let [index (index-of entities entity)]
         (.splice list index 1)
         (swap! indices dissoc (e/id entity))
+        (swap! positions remove-from-positions entity)
         (loop [index index]
           (when (< index (alength list))
             (let [id (e/id (aget list index))]
@@ -45,7 +72,10 @@
   [entities entity]
   (when entity
     (when-let [index (index-of entities entity)]
-      (aset (.-list entities) index entity)))
+      (let [entity-list (.-list entities)
+            old-entity (aget entity-list index)]
+        (swap! (.-positions entities) update-position old-entity entity)
+        (aset entity-list index entity))))
   entities)
 
 (defn first-match
