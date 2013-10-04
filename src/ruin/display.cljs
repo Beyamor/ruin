@@ -1,6 +1,7 @@
 (ns ruin.display
   (:require [ruin.color :as color]
-            [ruin.level :as l])
+            [ruin.level :as l]
+            [ruin.entities :as es])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (defn create
@@ -47,12 +48,13 @@
              (assoc-in [:glyph :foreground] "darkGrey")))))
 
 (defn draw-tiles!
-  [display level & {{screen-left :x screen-top :y screen-width :width screen-height :height
-                     :or {screen-left 0 screen-top 0}} :screen
-                    tile-transform :transform 
-                    tile-filter :only
-                    :keys [left top]
-                    :or {tile-filter identity left 0 top 0}}]
+  [display level
+   & {{screen-left :x screen-top :y screen-width :width screen-height :height
+       :or {screen-left 0 screen-top 0}} :screen
+      tile-transform :transform 
+      tile-filter :only
+      :keys [left top]
+      :or {tile-filter identity left 0 top 0}}]
   (let [screen-width (or screen-width (:width display))
         screen-height (or screen-height (:height display))]
     (doseq [screen-x (range screen-left (+ screen-left screen-width))
@@ -65,3 +67,27 @@
                          (tile-transform tile-x tile-y tile)
                          tile)]]
       (draw-tile! display screen-x screen-y tile))))
+
+; TODO: maybe move this somewhere else. ruin.entity?
+(defn visible?
+  [visible-tiles]
+  (fn [entity]
+    (contains? visible-tiles [(:x entity) (:y entity)])))
+
+(defn draw-entities!
+  [display
+   entities
+    & {{screen-left :x screen-top :y screen-width :width screen-height :height
+       :or {screen-left 0 screen-top 0}} :screen
+       entity-filter :only
+       :keys [left top]
+       :or {entity-filter identity left 0 top 0}}]
+  (let [screen-width (or screen-width (:width display))
+        screen-height (or screen-height (:height display))]
+    (doseq [screen-x (range screen-left (+ screen-left screen-width))
+            screen-y (range screen-top (+ screen-top screen-height))
+            :let [world-x (+ screen-x left)
+                  world-y (+ screen-y top)]
+            entity (es/at-position entities world-x world-y)
+            :when (entity-filter entity)]
+      (draw-glyph! display screen-x screen-y (:glyph entity)))))
