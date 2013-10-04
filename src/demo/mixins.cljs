@@ -118,7 +118,9 @@
   destructible
   :init
   #(-> %
-     (assoc-if-missing :hp 10)
+     (assoc-if-missing :max-hp 10)
+     (->/as with-max-hp
+            (assoc-if-missing :hp (:max-hp with-max-hp)))
      (assoc-if-missing :defense 0))
 
   :take-damage
