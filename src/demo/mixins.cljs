@@ -33,8 +33,7 @@
 
 (defmixin
   is-player
-  :is-player?
-  true)
+  :is-player? true)
 
 (defn get-player-movement-direction
   [key-events]
@@ -79,106 +78,100 @@
 
 (defmixin
   player-actor
-  :group
-  :actor
-
-  :act
-  (fn [this {:keys [scene key-events]}]
-    (go (let [[dx dy] (<! (get-player-movement-direction key-events))]
-          (merge-messages
-            {:clear-messages this}
-            (try-move this scene dx dy))))))
+  :group :actor
+  :act (fn [this {:keys [scene key-events]}]
+         (go (let [[dx dy] (<! (get-player-movement-direction key-events))]
+               (merge-messages
+                 {:clear-messages this}
+                 (try-move this scene dx dy))))))
 
 (defmixin
   fungus-actor
-  :group
-  :actor
+  :group :actor
+  :init #(assoc % :growths 5)
+  :act (fn [{:keys [growths] :as this} {:keys [scene]}]
+         (when (and (pos? growths)
+                    (<= (rand) 0.02))
+           (let [x (+ (:x this) -1 (rand-int 3))
+                 y (+ (:y this) -1 (rand-int 3))]
+             (when (helpers/is-empty-floor? scene x y)
+               {:update (-> this
+                          (update-in [:growths] dec))
+                :add (->
+                       (fungus)
+                       (assoc :x x)
+                       (assoc :y y))
+                :send (for [entity (es/nearby (:entities scene) x y)]
+                        [entity "The fungus is spreading!"])})))))
 
-  :init
-  #(assoc % :growths 5)
+(def init-health #(-> %
+                    (assoc-if-missing :max-hp 10)
+                    (->/as with-max-hp
+                           (assoc-if-missing :hp (:max-hp with-max-hp)))
+                    (assoc-if-missing :defense 0)))
 
-  :act
-  (fn [{:keys [growths] :as this} {:keys [scene]}]
-    (when (and (pos? growths)
-               (<= (rand) 0.02))
-      (let [x (+ (:x this) -1 (rand-int 3))
-            y (+ (:y this) -1 (rand-int 3))]
-        (when (helpers/is-empty-floor? scene x y)
-          {:update
-           (-> this
-             (update-in [:growths] dec))
-           :add
-           (->
-             (fungus)
-             (assoc :x x)
-             (assoc :y y))
-           :send
-           (for [entity (es/nearby (:entities scene) x y)]
-             [entity "The fungus is spreading!"])})))))
-
-
-(defmixin
-  destructible
-  :init
-  #(-> %
-     (assoc-if-missing :max-hp 10)
-     (->/as with-max-hp
-            (assoc-if-missing :hp (:max-hp with-max-hp)))
-     (assoc-if-missing :defense 0))
-
-  :take-damage
+(defn take-damage
+  [& {:keys [on-death]}]
   (fn [this attacker damage]
     (let [new-hp (- (:hp this) damage)]
       (if (> new-hp 0)
         {:update (assoc this :hp new-hp)}
-        {:remove this
-         :send [[this "You die!"]
-                [attacker (str "You kill the " (:name this) ".")]]}))))
+        (merge
+          {:update (assoc this :hp 0)}
+          (on-death this attacker))))))
+
+(defmixin
+  destructible
+  :init init-health
+  :group :destructible
+  :take-damage (take-damage
+                 :on-death
+                 (fn [this attacker]
+                   {:remove this
+                    :send [[this "You die!"]
+                           [attacker (str "You kill the " (:name this) ".")]]})))
+(defmixin
+  destructible-player
+  :init init-health
+  :group :destructible
+  :take-damage (take-damage
+                 :on-death
+                 (fn [this attacker]
+                   {:send [[this "You have died... Press [Enter] to continue!"]]
+                    :player-killed? true})))
 
 (defmixin
   attacker
-  :group
-  :attacker
-
-  :init
-  #(-> %
-     (assoc-if-missing :attack 1))
-
-  :try-attack
-  (fn [this target]
-    (when (e/has-mixin? target :destructible)
-      (let [damage (->
-                     (- (:attack this) (:defense target))
-                     (max 0)
-                     rand-int
-                     inc)]
-        (merge-messages
-          {:send [[this (str "You strike the " (:name target) " for " damage " damage!")]
-                  [target (str "The " (:name this) " strikes you for " damage " damage!")]]}
-          (e/call target :take-damage this damage))))))
+  :group :attacker
+  :init #(-> %
+           (assoc-if-missing :attack 1))
+  :try-attack (fn [this target]
+                (when (e/has-mixin? target :destructible)
+                  (let [damage (->
+                                 (- (:attack this) (:defense target))
+                                 (max 0)
+                                 rand-int
+                                 inc)]
+                    (merge-messages
+                      {:send [[this (str "You strike the " (:name target) " for " damage " damage!")]
+                              [target (str "The " (:name this) " strikes you for " damage " damage!")]]}
+                      (e/call target :take-damage this damage))))))
 
 (defmixin
   message-recipient
-  :get-messages
-  (fn [this scene]
-    (s/get-messages scene this)))
+  :get-messages (fn [this scene]
+                  (s/get-messages scene this)))
 
 (defmixin
   sight
-  :group
-  :sight
-
-  :init
-  #(-> % (assoc-if-missing :sight-radius 5)))
+  :group :sight
+  :init #(-> % (assoc-if-missing :sight-radius 5)))
 
 (defmixin
   wander-actor
-  :group
-  :actor
-
-  :act
-  (fn [this {:keys [scene]}]
-    (let [[dx dy] (if (random/coin-flip)
-                    [(random/plus-minus) 0]
-                    [0 (random/plus-minus)])]
-      (try-move this scene dx dy))))
+  :group :actor
+  :act (fn [this {:keys [scene]}]
+         (let [[dx dy] (if (random/coin-flip)
+                         [(random/plus-minus) 0]
+                         [0 (random/plus-minus)])]
+           (try-move this scene dx dy))))

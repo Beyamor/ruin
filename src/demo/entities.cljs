@@ -10,12 +10,12 @@
     :mixins [:player-actor
              :is-player
              :attacker
-             :destructible
+             :destructible-player
              :message-recipient
              :sight]
     :attack 10
     :sight-radius 8
-    :max-hp 40))
+    :max-hp 10))
 
 (def fungus
   (e/define
