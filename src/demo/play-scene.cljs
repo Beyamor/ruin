@@ -1,7 +1,7 @@
 (ns demo.play-scene
   (:use [cljs.core.async :only [chan put! <!]]
         [ruin.util :only [aremove]]
-        [demo.entities :only [player fungus]])
+        [demo.entities :only [player fungus bat newt]])
   (:require [ruin.game :as g]
             [ruin.display :as d]
             [ruin.entity :as e]
@@ -108,16 +108,17 @@
       [some-x some-y]
       (recur (random-floor-position level)))))
 
-(defn add-fungi
+(defn add-enemies
   [scene]
   (reduce
     (fn [scene _]
       (let [[x y] (random-free-position scene)]
-        (s/add scene
-               (-> (fungus)
-                 (assoc :x x)
-                 (assoc :y y)))))
-    scene (range 50)))
+        (let [entity (rand-nth [fungus bat newt])]
+          (s/add scene
+                 (-> (entity)
+                   (assoc :x x)
+                   (assoc :y y))))))
+    scene (range 100)))
 
 (defn play-scene
   []
@@ -152,4 +153,4 @@
          :visible-tiles #{}})
       (s/add player)
       (update-seen-tiles player)
-      add-fungi)))
+      add-enemies)))

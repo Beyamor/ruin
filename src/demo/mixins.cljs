@@ -8,7 +8,8 @@
             [ruin.scene :as s]
             [ruin.entity :as e]
             [ruin.entities :as es]
-            [demo.helpers :as helpers])
+            [demo.helpers :as helpers]
+            [ruin.random :as random])
   (:use-macros [cljs.core.async.macros :only [go]]
                [ruin.mixin.macros :only [defmixin]])
   (:require-macros [lonocloud.synthread :as ->]))
@@ -56,7 +57,7 @@
       (cond
         ; target and we can attack, do so
         (and target (e/has-mixin? entity :attacker))
-        (e/call entity :attack target)
+        (e/call entity :try-attack target)
 
         ; target and we can't attack, do nothing
         target
@@ -130,7 +131,7 @@
         {:update (assoc this :hp new-hp)}
         {:remove this
          :send [[this "You die!"]
-                [attacker (str "You kill the " (:name this))]]}))))
+                [attacker (str "You kill the " (:name this) ".")]]}))))
 
 (defmixin
   attacker
@@ -139,19 +140,19 @@
 
   :init
   #(-> %
-     (assoc-if-missing :attack-strength 1))
+     (assoc-if-missing :attack 1))
 
-  :attack
+  :try-attack
   (fn [this target]
     (when (e/has-mixin? target :destructible)
       (let [damage (->
-                     (- (:attack-strength this) (:defense target))
+                     (- (:attack this) (:defense target))
                      (max 0)
                      rand-int
                      inc)]
         (merge-messages
           {:send [[this (str "You strike the " (:name target) " for " damage " damage!")]
-                  [target (str "The " (:name target) " strikes you for " damage " damage!")]]}
+                  [target (str "The " (:name this) " strikes you for " damage " damage!")]]}
           (e/call target :take-damage this damage))))))
 
 (defmixin
@@ -167,3 +168,15 @@
 
   :init
   #(-> % (assoc-if-missing :sight-radius 5)))
+
+(defmixin
+  wander-actor
+  :group
+  :actor
+
+  :act
+  (fn [this {:keys [scene]}]
+    (let [[dx dy] (if (random/coin-flip)
+                    [(random/plus-minus) 0]
+                    [0 (random/plus-minus)])]
+      (try-move this scene dx dy))))

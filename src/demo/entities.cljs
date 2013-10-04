@@ -13,15 +13,37 @@
              :destructible
              :message-recipient
              :sight]
-    :attack-strength 10
+    :attack 10
     :sight-radius 8
     :max-hp 40))
 
 (def fungus
   (e/define
-    :name "Fungus"
+    :name "fungus"
     :char "F"
     :foreground "green"
     :mixins [:destructible
              :fungus-actor]
     :max-hp 10))
+
+(def bat
+  (e/define
+    :name "bat"
+    :char "B"
+    :foreground "darkviolet"
+    :max-hp 4
+    :attack 4
+    :mixins [:wander-actor
+             :attacker
+             :destructible]))
+
+(def newt
+  (e/define
+    :name "newt"
+    :char "N"
+    :foreground "orange"
+    :max-hp 3
+    :attack 2
+    :mixins [:wander-actor
+             :attacker
+             :destructible]))
