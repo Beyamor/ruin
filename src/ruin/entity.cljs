@@ -55,7 +55,7 @@
                                     :when (:group mixin)]
                                 (:group mixin)))}
       (merge
-        (dissoc-all properties :x :y :name :flyph :mixins :mixin-groups))
+        (dissoc-all properties :x :y :name :glyph :mixins :mixin-groups))
       (add-mixin-properties mixins)
       (init-mixins mixins))))
 

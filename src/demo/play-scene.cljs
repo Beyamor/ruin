@@ -34,6 +34,11 @@
   [scene id]
   (= id (e/id (get-player scene))))
 
+(defn print-messages
+  [display messages]
+  (dotimes [i (count messages)]
+    (d/draw-text! display 0 i (get messages i))))
+
 (defn render
   [{{display-width :width display-height :height :as display} :display
     {:keys [entities] {level-width :width level-height :height :as level} :level :as scene} :scene
@@ -45,10 +50,11 @@
         top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))
         tiles (get-in game [:scene :level :tiles])]
     (l/draw-tiles level display :left left :top top)
-    (s/draw-entities scene display :left left :top top)))
+    (s/draw-entities scene display :left left :top top)
+    (print-messages display (s/get-messages scene player))))
 
 (defn go-play
-  [{:keys [key-events]
+  [{:keys [key-events display]
     {:keys [scheduler]} :scene
     :as game}]
   (go (loop [actor-id (.next scheduler) game game]
@@ -58,14 +64,14 @@
                 is-player? (is-player-id? (:scene game) actor-id)]
             (when is-player?
               (g/refresh game))
-            (->>
+            (->
               (let [update (e/call actor :act game)
                     update (when update (if (map? update) update (<! update)))]
                 (if update
                   (s/update scene update)
                   scene))
-              (assoc game :scene)
-              (recur (.next scheduler))))
+              (->> (assoc game :scene))
+              (->> (recur (.next scheduler)))))
           (throw (js/Error. "Whoa, ran out of actors to update"))))))
 
 (defn random-free-position

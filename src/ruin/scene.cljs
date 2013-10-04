@@ -64,6 +64,28 @@
                            (>= y top) (<= y (+ top display-height)))]
                (d/draw-glyph! display (- x left) (- y top) (:glyph e))))
 
+(defn send-message
+  [scene target message]
+  (let [id (e/id target)]
+    (-> scene
+      (->/when (e/has-mixin? target :message-recipient)
+               (update-in [:messages id] (fnil conj []) message)))))
+
+(defn send-messages
+  [scene messages]
+  (reduce
+    (fn [scene [target message]]
+      (send-message scene target message))
+    scene messages))
+
+(defn get-messages
+  [scene target]
+  (get-in scene [:messages (e/id target)]))
+
+(defn clear-messages
+  [scene target]
+  (update-in scene [:messages] dissoc (e/id target)))
+
 (defn- update-entity
   [scene updated-entity]
   (es/update! (:entities scene) updated-entity)
@@ -73,7 +95,9 @@
   [scene {updated-entity :update
           added-entity :add
           removed-entity :remove
-          updated-level :update-level}]
+          updated-level :update-level
+          messages :send
+          messages-to-clear :clear-messages}]
   (-> scene
     (->/when updated-entity
              (update-entity updated-entity))
@@ -82,7 +106,11 @@
     (->/when removed-entity
              (remove removed-entity))
     (->/when added-entity
-             (add added-entity))))
+             (add added-entity))
+    (->/when messages-to-clear
+             (clear-messages messages-to-clear))
+    (->/when messages
+             (send-messages messages))))
 
 (defn update-by-mixins
   [scene mixin f]
@@ -98,9 +126,3 @@
     #(and (= (:x %) x)
           (= (:y %) y))
     (es/first-match entities )))
-
-
-(defn send-message
-  [scene target message]
-  (let [id (e/id target)]
-    (update-in scene [:messages id] (fnil conj []) message)))

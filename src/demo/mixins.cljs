@@ -12,6 +12,8 @@
                [ruin.mixin.macros :only [defmixin]])
   (:require-macros [lonocloud.synthread :as ->]))
 
+(def merge-messages (partial merge-with concat))
+
 (defn dig
   [level x y]
   (-> level
@@ -70,7 +72,9 @@
   :act
   (fn [this {:keys [scene key-events]}]
     (go (let [[dx dy] (<! (get-player-movement-direction key-events))]
-          (try-move this scene dx dy)))))
+          (merge-messages
+            {:clear-messages this}
+            (try-move this scene dx dy))))))
 
 (defmixin
   fungus-actor
@@ -105,11 +109,13 @@
      (assoc-if-missing :defense 0))
 
   :take-damage
-  (fn [this damage]
+  (fn [this attacker damage]
     (let [new-hp (- (:hp this) damage)]
       (if (> new-hp 0)
         {:update (assoc this :hp new-hp)}
-        {:remove this}))))
+        {:remove this
+         :send [[this "You die!"]
+                [attacker (str "You kill the " (:name this))]]}))))
 
 (defmixin
   attacker
@@ -128,4 +134,13 @@
                      (max 0)
                      rand-int
                      inc)]
-        (e/call target :take-damage damage)))))
+        (merge-messages
+          (e/call target :take-damage this damage)
+          {:send [[this (str "You strike the " (:name target) " for " damage " damage!")]
+                  [target (str "The " (:name target) " strikes you for " damage " damage!")]]})))))
+
+(defmixin
+  message-recipient
+  :get-messages
+  (fn [this scene]
+    (s/get-messages scene this)))
