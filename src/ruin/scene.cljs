@@ -54,15 +54,17 @@
 
 (defn draw-entities
   [scene
-   {display-width :width display-height :height :as display}
-   & {:keys [left top]
+   display
+   & {:keys [left top display-height display-width]
       :or {left 0 :right 0}}]
-  (es+/do-each [e (:entities scene)
-                :let [x (:x e)
-                      y (:y e)]
-                :when (and (>= x left) (<= x (+ left display-width))
-                           (>= y top) (<= y (+ top display-height)))]
-               (d/draw-glyph! display (- x left) (- y top) (:glyph e))))
+  (let [display-width (or display-width (:width display))
+        display-height (or display-height (:height display))]
+    (es+/do-each [e (:entities scene)
+                  :let [x (:x e)
+                        y (:y e)]
+                  :when (and (>= x left) (<= x (+ left display-width))
+                             (>= y top) (<= y (+ top display-height)))]
+                 (d/draw-glyph! display (- x left) (- y top) (:glyph e)))))
 
 (defn send-message
   [scene target message]

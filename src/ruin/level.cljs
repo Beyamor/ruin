@@ -25,9 +25,11 @@
 
 (defn draw-tiles
   [level
-   {display-width :width display-height :height :as display}
-   & {:keys [top left] :or {left 0 top 0}}]
-  (doseq [x (range display-width)
-          y (range display-height)
-          :let [tile (get-tile level (+ left x) (+ top y))]]
-    (d/draw-tile! display x y tile)))
+   display
+   & {:keys [top left display-width display-height] :or {left 0 top 0}}]
+  (let [display-width (or display-width (:width display))
+        display-height (or display-height (:height display))]
+    (doseq [x (range display-width)
+            y (range display-height)
+            :let [tile (get-tile level (+ left x) (+ top y))]]
+      (d/draw-tile! display x y tile))))

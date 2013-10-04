@@ -49,9 +49,11 @@
         left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
         top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))
         tiles (get-in game [:scene :level :tiles])]
-    (l/draw-tiles level display :left left :top top)
-    (s/draw-entities scene display :left left :top top)
-    (print-messages display (s/get-messages scene player))))
+    (l/draw-tiles level display :left left :top top :display-height (dec display-height))
+    (s/draw-entities scene display :left left :top top :display-height (dec display-height))
+    (doto display
+      (d/draw-text! 0 (dec display-height) (str "HP: " (:hp player) "/" (:max-hp player)) )
+      (print-messages (s/get-messages scene player)))))
 
 (defn go-play
   [{:keys [key-events display]
