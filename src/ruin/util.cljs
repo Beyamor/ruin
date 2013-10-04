@@ -19,3 +19,7 @@
   (if (contains? m k)
     m
     (assoc m k v)))
+
+(defn dissoc-all
+  [m & ks]
+  (reduce dissoc m ks))

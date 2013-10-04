@@ -1,5 +1,5 @@
 (ns ruin.entity
-  (:use [ruin.util :only [apply-map]]
+  (:use [ruin.util :only [apply-map dissoc-all]]
         [ruin.base :only [glyph]])
   (:require [ruin.mixin :as mixin])
   (:require-macros [lonocloud.synthread :as ->]))
@@ -38,7 +38,6 @@
       :as properties}]
   (let [mixins (map mixin/realize mixins)]
     (->
-      (merge properties
              {::id id
               :x x
               :y y
@@ -50,7 +49,9 @@
               :mixin-groups (set
                               (for [mixin mixins
                                     :when (:group mixin)]
-                                (:group mixin)))})
+                                (:group mixin)))}
+      (merge
+        (dissoc-all properties :x :y :name :flyph :mixins :mixin-groups))
       (add-mixin-properties mixins)
       (init-mixins mixins))))
 
