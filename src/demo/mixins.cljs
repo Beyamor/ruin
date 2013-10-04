@@ -7,6 +7,7 @@
             [ruin.game :as g]
             [ruin.scene :as s]
             [ruin.entity :as e]
+            [ruin.entities :as es]
             [demo.helpers :as helpers])
   (:use-macros [cljs.core.async.macros :only [go]]
                [ruin.mixin.macros :only [defmixin]])
@@ -47,11 +48,11 @@
           (recur (<! key-events))))))
 
 (defn try-move
-  [entity {:keys [level] :as scene} dx dy]
+  [entity {:keys [level entities]} dx dy]
   (let [x (+ (:x entity) dx)
         y (+ (:y entity) dy)]
     (let [tile (l/get-tile level x y)
-          target (s/entity-at-position scene x y)]
+          target (es/first-at-position entities x y)]
       (cond
         ; target and we can attack, do so
         (and target (e/has-mixin? entity :attacker))

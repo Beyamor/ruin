@@ -119,10 +119,3 @@
      entity (:entities scene)
      :when (e/has-mixin? entity mixin)]
     (update scene (f entity scene))))
-
-(defn entity-at-position
-  [{:keys [entities]} x y]
-  (->>
-    #(and (= (:x %) x)
-          (= (:y %) y))
-    (es/first-match entities )))

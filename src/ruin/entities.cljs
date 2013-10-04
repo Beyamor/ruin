@@ -91,3 +91,12 @@
 (defn first-with
   [entities property]
   (first-match entities #(contains? % property)))
+
+(defn at-position
+  [entities x y]
+  (when-let [ids (get-in @(.-positions entities) [x y])]
+    (map #(get-by-id entities %) ids)))
+
+(defn first-at-position
+  [entities x y]
+  (first (at-position entities x y)))
