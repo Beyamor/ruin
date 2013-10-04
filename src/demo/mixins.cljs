@@ -12,7 +12,16 @@
                [ruin.mixin.macros :only [defmixin]])
   (:require-macros [lonocloud.synthread :as ->]))
 
-(def merge-messages (partial merge-with concat))
+(defn merge-messages
+  [m1 m2]
+  (reduce
+    (fn [m [k v]]
+      (if-not (contains? m k)
+        (assoc m k v)
+        (case k
+          :send (update-in m [k] concat v)
+          (throw (js/Error. (str "Unhandled duplicate key: " k))))))
+    m1 m2))
 
 (defn dig
   [level x y]
@@ -135,9 +144,9 @@
                      rand-int
                      inc)]
         (merge-messages
-          (e/call target :take-damage this damage)
           {:send [[this (str "You strike the " (:name target) " for " damage " damage!")]
-                  [target (str "The " (:name target) " strikes you for " damage " damage!")]]})))))
+                  [target (str "The " (:name target) " strikes you for " damage " damage!")]]}
+          (e/call target :take-damage this damage))))))
 
 (defmixin
   message-recipient
