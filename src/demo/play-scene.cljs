@@ -48,7 +48,9 @@
         center-y (:y player)
         left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
         top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))]
-    (l/draw-tiles level display :left left :top top :display-height (dec display-height) :visible-tiles visible-tiles)
+    (doto display
+      (d/draw-tiles! level :left left :top top :screen {:height (dec display-height)}
+                    :only :explored? :transform (d/highlight-visible-tiles visible-tiles)))
     (s/draw-entities scene display :left left :top top :display-height (dec display-height) :visible-tiles visible-tiles)
     (doto display
       (d/draw-text! 0 (dec display-height) (str "HP: " (:hp player) "/" (:max-hp player)) )

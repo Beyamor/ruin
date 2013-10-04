@@ -1,5 +1,7 @@
 (ns ruin.display
-  (:require [ruin.color :as color]))
+  (:require [ruin.color :as color]
+            [ruin.level :as l])
+  (:require-macros [lonocloud.synthread :as ->]))
 
 (defn create
   [width height]
@@ -36,3 +38,30 @@
 (defn draw-tile!
   [display x y {:keys [glyph]}]
   (draw-glyph! display x y glyph))
+
+(defn highlight-visible-tiles
+  [visible-tiles]
+  (fn [x y tile]
+    (-> tile
+    (->/when (not (contains? visible-tiles [x y]))
+             (assoc-in [:glyph :foreground] "darkGrey")))))
+
+(defn draw-tiles!
+  [display level & {{screen-left :x screen-top :y screen-width :width screen-height :height
+                     :or {screen-left 0 screen-top 0}} :screen
+                    tile-transform :transform 
+                    tile-filter :only
+                    :keys [left top]
+                    :or {tile-filter identity left 0 top 0}}]
+  (let [screen-width (or screen-width (:width display))
+        screen-height (or screen-height (:height display))]
+    (doseq [screen-x (range screen-left (+ screen-left screen-width))
+            screen-y (range screen-top (+ screen-top screen-height))
+            :let [tile-x (+ screen-x left)
+                  tile-y (+ screen-y top)
+                  tile (l/get-tile level tile-x tile-y)]
+            :when (tile-filter tile)
+            :let [tile (if tile-transform
+                         (tile-transform tile-x tile-y tile)
+                         tile)]]
+      (draw-tile! display screen-x screen-y tile))))

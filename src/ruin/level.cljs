@@ -1,7 +1,6 @@
 (ns ruin.level
   (:use [ruin.base :only [null-tile]])
-  (:require [ruin.array2d :as a2d]
-            [ruin.display :as d]))
+  (:require [ruin.array2d :as a2d]))
 
 (defn get-tile
   [{:keys [height width] :as level} x y]
@@ -29,25 +28,6 @@
   {:width width
    :height height
    :tiles tiles})
-
-(defn draw-tiles
-  [level
-   display
-   & {:keys [top left display-width display-height visible-tiles] :or {left 0 top 0}}]
-  (let [display-width (or display-width (:width display))
-        display-height (or display-height (:height display))]
-    (doseq [x (range display-width)
-            y (range display-height)
-            :let [tile-x (+ left x)
-                  tile-y (+ top y)
-                  tile (get-tile level tile-x tile-y)]
-            :when (:explored? tile)
-            :let [foreground (if (or (nil? visible-tiles) (contains? visible-tiles [tile-x tile-y]))
-                               (get-in tile [:glyph :foreground])
-                               "darkGray")]]
-      (d/draw-glyph! display x y (-> tile
-                                   :glyph
-                                   (assoc :foreground foreground))))))
 
 (defn fov
   [level & {:keys [vision]
