@@ -70,16 +70,19 @@
   scene)
 
 (defn update
-  [scene {:keys [entity-update level-update entity-removal entity-creation]}]
+  [scene {updated-entity :update
+          added-entity :add
+          removed-entity :remove
+          updated-level :update-level}]
   (-> scene
-    (->/when entity-update
-             (update-entity entity-update))
-    (->/when level-update
-             (assoc :level level-update))
-    (->/when entity-removal
-             (remove entity-removal))
-    (->/when entity-creation
-             (add entity-creation))))
+    (->/when updated-entity
+             (update-entity updated-entity))
+    (->/when updated-level
+             (assoc :level updated-level))
+    (->/when removed-entity
+             (remove removed-entity))
+    (->/when added-entity
+             (add added-entity))))
 
 (defn update-by-mixins
   [scene mixin f]

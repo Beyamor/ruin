@@ -52,14 +52,14 @@
 
         ; if the tile's free, walk on it
         (:walkable? tile)
-        {:entity-update
+        {:update
          (-> entity
            (assoc :x x)
            (assoc :y y))}
 
         ; otherwise, try digging it
         (:diggable? tile)
-        {:level-update
+        {:update-level
          (dig level x y)}))))
 
 (defmixin
@@ -87,10 +87,10 @@
       (let [x (+ (:x this) -1 (rand-int 3))
             y (+ (:y this) -1 (rand-int 3))]
         (when (helpers/is-empty-floor? scene x y)
-          {:entity-update
+          {:update
            (-> this
              (update-in [:growths] dec))
-           :entity-creation
+           :add
            (->
              (fungus)
              (assoc :x x)
@@ -108,8 +108,8 @@
   (fn [this damage]
     (let [new-hp (- (:hp this) damage)]
       (if (> new-hp 0)
-        {:entity-update (assoc this :hp new-hp)}
-        {:entity-removal this}))))
+        {:update (assoc this :hp new-hp)}
+        {:remove this}))))
 
 (defmixin
   attacker
