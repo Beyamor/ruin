@@ -10,7 +10,8 @@
            :attacker
            :destructible-player
            :message-recipient
-           :sight]
+           :sight
+           :inventory-holder]
   :properties {:attack 10
                :sight-radius 8
                :max-hp 10

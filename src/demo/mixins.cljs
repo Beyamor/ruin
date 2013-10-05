@@ -71,7 +71,8 @@
 (defmixin
   player-actor
   :group :actor
-  :act (fn [this {:keys [key-events display]
+  :act (fn [{:keys [x y] :as this}
+            {:keys [key-events display]
                   {:keys [level] :as scene} :scene
                   :as game}]
          (go (loop [[event-type key-code] (<! key-events)]
@@ -96,6 +97,15 @@
                    (let [what-to-drop (<! (screens/multiple-item-selection
                                             (:items this) display key-events "Choose the items you wish to drop"))
                          [this level] (inv/drop-multiple this level what-to-drop)]
+                     {:update this
+                      :update-level level})
+
+                   ; picking things up
+                   (= key-code js/ROT.VK_COMMA)
+                   (let [items-on-tile (zipmap (range) (l/get-items level x y))
+                         what-to-pickup (<! (screens/multiple-item-selection
+                                              items-on-tile display key-events "Choose the items you which to pick up"))
+                         [this level] (inv/pick-up-multiple this level what-to-pickup)]
                      {:update this
                       :update-level level})
 

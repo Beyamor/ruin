@@ -12,8 +12,10 @@
   (>= (count items) inventory-size))
 
 (defn has-room?
-  [entity]
-  (not (full? entity)))
+  ([entity]
+   (not (full? entity)))
+  ([{:keys [items inventory-size]} more-items]
+   (< (+ (count items) (count more-items)) inventory-size)))
 
 (defn- first-unused-index
   [{:keys [inventory-size items]}]
@@ -27,18 +29,22 @@
   (when (has-room? entity)
     (update-in entity [:items] assoc (first-unused-index entity) item)))
 
+(defn add-all
+  [entity items]
+  (reduce add entity items))
+
 (defn remove
   [entity which]
   [(update-in entity [:items] dissoc which)
    (get-in entity [:items which])])
 
-(defn pick-up
-  [{:keys [x y] :as entity} level]
-  (loop [entity entity level level]
-    (let [[item level] (l/remove-first-item x y)]
-    (if (or (not item) (full? entity))
-      [entity level]
-      (recur (add entity item) level)))))
+(defn pick-up-multiple
+  [{:keys [x y] :as entity} level indices]
+  (if (has-room? entity indices)
+    (let [[updated-level items] (l/remove-items level x y indices)]
+      [(add-all entity items) updated-level])
+    (throw (js/Error. (str "Whoa, not enough room in the inventory! "
+                           (count indices) " + " (count (:items entity)) " / " (:inventory-size entity))))))
 
 (defn drop
   [{:keys [x y] :as entity} level which]

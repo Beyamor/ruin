@@ -3,20 +3,26 @@
   (:require [ruin.array2d :as a2d]))
 
 (defn get-items
-  [level x y]
-  (get-in level [:items x y]))
+  ([level x y]
+    (get-in level [:items x y])))
 
 (defn add-item
   [level x y item]
   (update-in level [:items x y] (fnil conj []) item))
 
-(defn remove-first-item
-  [level x y]
-  (let [items (get-items level x y)]
-    (if (empty? items)
-      [nil level]
-      [(peek items)
-       (update-in level [:items] pop)])))
+(defn remove-items
+  [level x y indexes]
+  (let [indexes (set indexes)
+        items (get-items level x y)
+        [keep remove] (loop [i 0 keep [] remove []]
+                        (if (< i (count indexes))
+                          (let [item (nth items i)
+                                [keep remove] (if (contains? indexes i)
+                                                [keep (conj remove item)]
+                                                [(conj keep item) remove])]
+                            (recur (inc i) keep remove))
+                          [keep remove]))]
+    [(assoc-in level [:items x y] keep) remove]))
 
 (defn add-item-at-random-pos
   [level item]
