@@ -28,7 +28,7 @@
     (let [index (-> items keys (nth i))
           item (get items index)]
       (->>
-        [(int->letter i)
+        [(int->letter index)
          (if (selected? index) "+" "-")
          (i/describe item)]
         (interpose " ")

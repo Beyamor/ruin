@@ -9,6 +9,7 @@
             [ruin.entities :as es]
             [demo.helpers :as helpers]
             [demo.screens :as screens]
+            [demo.inventory :as inv]
             [ruin.random :as random])
   (:use-macros [cljs.core.async.macros :only [go]]
                [ruin.mixin.macros :only [defmixin]])
@@ -70,21 +71,36 @@
 (defmixin
   player-actor
   :group :actor
-  :act (fn [this {:keys [scene key-events display] :as game}]
+  :act (fn [this {:keys [key-events display]
+                  {:keys [level] :as scene} :scene
+                  :as game}]
          (go (loop [[event-type key-code] (<! key-events)]
                (if (= event-type :down)
                  (cond
+                   ; movement
                    (contains? player-movement-directions key-code)
                    (let [[dx dy] (get player-movement-directions key-code)]
                      (merge-messages
                        {:clear-messages this}
                        (try-move this scene dx dy)))
 
-                   (= key-code ROT.VK_I)
+                   ; inventory viewing
+                   (= key-code js/ROT.VK_I)
                    (do
-                     (<! (screens/multiple-item-selection (:items this) display key-events "Inventory"))
+                     (<! (screens/item-viewing (:items this) display key-events "Inventory"))
                      (g/refresh game)
-                     (recur (<! key-events))))
+                     (recur (<! key-events)))
+
+                   ; dropping things
+                   (= key-code js/ROT.VK_D)
+                   (let [what-to-drop (<! (screens/multiple-item-selection
+                                            (:items this) display key-events "Choose the items you wish to drop"))
+                         [this level] (inv/drop-multiple this level what-to-drop)]
+                     {:update this
+                      :update-level level})
+
+                   :else
+                   (recur (<! key-events)))
                  (recur (<! key-events)))))))
 
 (defmixin

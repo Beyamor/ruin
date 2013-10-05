@@ -43,4 +43,11 @@
 (defn drop
   [{:keys [x y] :as entity} level which]
   (let [[entity item] (remove entity which)]
-    [entity (l/add-item level x y)]))
+    [entity (l/add-item level x y item)]))
+
+(defn drop-multiple
+  [entity level whiches]
+  (reduce
+    (fn [[entity level] which]
+      (drop entity level which))
+    [entity level] whiches))
