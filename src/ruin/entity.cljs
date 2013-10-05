@@ -72,3 +72,11 @@
 (defn call
   [e property & args]
   (apply (get e property) e args))
+
+(defn pos
+  [{:keys [x y]}]
+  [x y])
+
+(defn set-pos
+  [e x y]
+  (-> e (assoc :x x) (assoc :y y)))

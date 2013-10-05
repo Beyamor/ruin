@@ -1,6 +1,7 @@
 (ns ruin.display
   (:require [ruin.color :as color]
             [ruin.level :as l]
+            [ruin.entity :as e]
             [ruin.entities :as es])
   (:require-macros [lonocloud.synthread :as ->]))
 
@@ -72,7 +73,7 @@
 (defn visible?
   [visible-tiles]
   (fn [entity]
-    (contains? visible-tiles [(:x entity) (:y entity)])))
+    (contains? visible-tiles (e/pos entity))))
 
 (defn draw-entities!
   [display

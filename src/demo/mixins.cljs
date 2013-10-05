@@ -65,10 +65,7 @@
 
         ; if the tile's free, walk on it
         (:walkable? tile)
-        {:update
-         (-> entity
-           (assoc :x x)
-           (assoc :y y))}
+        {:update (e/set-pos entity x y)}
 
         ; otherwise, try digging it
         (and (:diggable? tile)
@@ -97,10 +94,7 @@
              (when (helpers/is-empty-floor? scene x y)
                {:update (-> this
                           (update-in [:growths] dec))
-                :add (->
-                       (fungus)
-                       (assoc :x x)
-                       (assoc :y y))
+                :add (e/set-pos (fungus) x y)
                 :send (for [entity (es/nearby (:entities scene) x y)]
                         [entity "The fungus is spreading!"])})))))
 

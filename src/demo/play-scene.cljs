@@ -123,9 +123,7 @@
       (let [[x y] (random-free-position scene)]
         (let [entity (rand-nth [fungus bat newt])]
           (s/add scene
-                 (-> (entity)
-                   (assoc :x x)
-                   (assoc :y y))))))
+                 (e/set-pos (entity) x y)))))
     scene (range 100)))
 
 (defscene
@@ -140,9 +138,7 @@
                           :val->tile {1 ts/floor-tile
                                       0 ts/wall-tile}))
         [player-x player-y] (random-floor-position level)
-        player (-> (player)
-                 (assoc :x player-x)
-                 (assoc :y player-y))
+        player (e/set-pos (player) player-x player-y)
         scheduler (js/ROT.Scheduler.Simple.)]
     {:render render
      :go go-play
