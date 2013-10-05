@@ -10,6 +10,7 @@
             [demo.helpers :as helpers]
             [demo.screens :as screens]
             [demo.inventory :as inv]
+            [ruin.item :as i]
             [ruin.random :as random])
   (:use-macros [cljs.core.async.macros :only [go]]
                [ruin.mixin.macros :only [defmixin]])
@@ -60,7 +61,15 @@
 
         ; if the tile's free, walk on it
         (:walkable? tile)
-        {:update (e/set-pos entity x y)}
+        (let [items (l/get-items level x y)]
+          (-> {:update (e/set-pos entity x y)}
+            (->/when (not (empty? items))
+                     (->/let [message (if (= (count items) 1)
+                                        (str "You see " (i/describe-a (first items)) ".")
+                                        (str "There are several items here."))]
+                             (merge-messages
+                               {:send [[entity message]]})))))
+
 
         ; otherwise, try digging it
         (and (:diggable? tile)
@@ -79,8 +88,8 @@
   :group :actor
   :act (fn [{:keys [x y] :as this}
             {:keys [key-events display]
-                  {:keys [level] :as scene} :scene
-                  :as game}]
+             {:keys [level] :as scene} :scene
+             :as game}]
          (go (loop [[event-type key-code] (<! key-events)]
                (if (= event-type :down)
                  (cond
