@@ -184,6 +184,13 @@
                            (assoc-if-missing :hp (:max-hp with-max-hp)))
                     (assoc-if-missing :defense 0)))
 
+(defn try-drop-corpse
+  [{:keys [x y corpse-drop-rate] :as entity}]
+  (when (< (* 100 (Math/random)) corpse-drop-rate)
+    [:drop-item [x y (-> (i/create :corpse)
+                       (assoc-in [:glyph :foreground]
+                                 (get-in entity [:glyph :foreground])))]]))
+
 (defn take-damage
   [this attacker damage]
   (let [new-hp (- (:hp this) damage)]
@@ -192,6 +199,8 @@
       (concat
         [:update (assoc this :hp 0)
          :send [attacker (str "You kill the " (:name this) ".")]]
+        (when (has-mixin? this :corpse-dropper)
+          (try-drop-corpse this))
         (kill this)))))
 
 (defmixin
@@ -256,3 +265,8 @@
            (->/as e
                   (assoc-if-missing :fullness (/ (:max-fullness e) 2)))
            (assoc-if-missing :hunger 1)))
+
+(defmixin
+  :corpse-dropper
+  :init #(-> %
+           (->> (merge {:corpse-drop-rate 100}))))

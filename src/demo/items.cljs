@@ -29,3 +29,9 @@
 (defitem :rock
          :glyph {:char "*"
                  :foreground "grey"})
+
+(defitem :corpse
+         :glyph {:char "%"}
+         :properties {:food-value 75
+                     :consumptions 1}
+        :mixins [:edible]) 

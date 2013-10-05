@@ -33,7 +33,8 @@
                         :attack 4}
            :mixins [:wander-actor
                     :attacker
-                    :destructible])
+                    :destructible
+                    :corpse-dropper])
 
 (defentity :newt
            :glyph {:char "N"
@@ -42,4 +43,5 @@
                         :attack 2}
            :mixins [:wander-actor
                     :attacker
-                    :destructible])
+                    :destructible
+                    :corpse-dropper])

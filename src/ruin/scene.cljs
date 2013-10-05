@@ -2,6 +2,7 @@
   (:use [ruin.mixin :only [has-mixin?]])
   (:require [ruin.display :as d]
             [ruin.entity :as e]
+            [ruin.level :as l]
             [ruin.entities :as es])
   (:require-macros [lonocloud.synthread :as ->]
                    [ruin.entities.macros :as es+])
@@ -101,6 +102,8 @@
                   (send-message scene target message))
           :clear-messages (clear-messages scene value)
           :remove (remove scene value)
+          :drop-item (let [[x y item] value]
+                       (update-in scene [:level] l/add-item x y item))
           :update-level (assoc scene :level value)
           scene))
       scene instructions)))
