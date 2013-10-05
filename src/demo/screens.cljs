@@ -11,6 +11,11 @@
   (and (= event-type :down)
        (= key-code js/ROT.VK_ESCAPE)))
 
+(defn confirm-command?
+  [event-type key-code]
+  (and (= event-type :down)
+       (= key-code js/ROT.VK_RETURN)))
+
 (defn select-command?
   [event-type key-code]
   (and (= event-type :down)
@@ -54,8 +59,11 @@
     (go
       (loop [[event-type key-code] (<! key-events) state state]
         (cond
-          (close-command? event-type key-code)
+          (confirm-command? event-type key-code)
           (:selection state)
+
+          (close-command? event-type key-code)
+          nil
 
           (and (select-command? event-type key-code)
                (contains? (:items state) (key->selection key-code)))
@@ -77,8 +85,13 @@
     (go
       (loop [[event-type key-code] (<! key-events) state state]
         (cond
+          (confirm-command? event-type key-code)
+          (if-not (empty? (:selections state))
+            (:selections state)
+            nil)
+
           (close-command? event-type key-code)
-          (:selections state)
+          nil
 
           (and (select-command? event-type key-code)
                (contains? (:items state) (key->selection key-code)))

@@ -68,6 +68,12 @@
         {:update-level
          (dig level x y)}))))
 
+(defn send-and-continue
+  [this message]
+  {:clear-messages this
+   :send [[this message]]
+   :action-continues? true})
+
 (defmixin
   player-actor
   :group :actor
@@ -88,26 +94,34 @@
                    ; inventory viewing
                    (= key-code js/ROT.VK_I)
                    (do
-                     (<! (screens/item-viewing (:items this) display key-events "Inventory"))
                      (g/refresh game)
-                     (recur (<! key-events)))
+                     (<! (screens/item-viewing (:items this) display key-events "Inventory"))
+                     {:action-continues? true})
 
                    ; dropping things
                    (= key-code js/ROT.VK_D)
-                   (let [what-to-drop (<! (screens/multiple-item-selection
-                                            (:items this) display key-events "Choose the items you wish to drop"))
-                         [this level] (inv/drop-multiple this level what-to-drop)]
-                     {:update this
-                      :update-level level})
+                   (if-not (empty? (:items this))
+                     (do (g/refresh game)
+                       (if-let [what-to-drop (<! (screens/multiple-item-selection
+                                                   (:items this) display key-events "Choose the items you wish to drop"))]
+                         (let [[this level] (inv/drop-multiple this level what-to-drop)]
+                           {:update this
+                            :update-level level})
+                         (send-and-continue this "You dropped nothing.")))
+                     (send-and-continue this "You have nothing to drop."))
 
                    ; picking things up
                    (= key-code js/ROT.VK_COMMA)
-                   (let [items-on-tile (zipmap (range) (l/get-items level x y))
-                         what-to-pickup (<! (screens/multiple-item-selection
-                                              items-on-tile display key-events "Choose the items you which to pick up"))
-                         [this level] (inv/pick-up-multiple this level what-to-pickup)]
-                     {:update this
-                      :update-level level})
+                   (let [items-on-tile (zipmap (range) (l/get-items level x y))]
+                     (if-not (empty? items-on-tile)
+                       (if-let [what-to-pickup (<! (screens/multiple-item-selection
+                                                     items-on-tile display key-events "Choose the items you which to pick up"))]
+                         (let [[this level] (inv/pick-up-multiple this level what-to-pickup)]
+                           {:update this
+                            :update-level level})
+                         (send-and-continue this "You picked up nothing."))
+                       (send-and-continue this "There is nothing to pick up.")))
+
 
                    :else
                    (recur (<! key-events)))

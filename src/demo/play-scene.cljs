@@ -100,15 +100,20 @@
             (let [update (-> (e/call actor :act game)
                            (->/as update
                                   (->/when (and update (not (map? update))) <!)))
-                  player-killed? (:player-killed? update)
                   updated-scene (-> scene
                                   (s/update update)
                                   (->/when is-player?
                                            (update-seen-tiles actor)))
                   updated-game (assoc game :scene updated-scene)]
-              (if-not player-killed?
-                (recur (.next scheduler) updated-game)
-                (<! (acknowledge-death updated-game)))))
+              (cond
+                (:player-killed? update)
+                (<! (acknowledge-death updated-game))
+
+                (:action-continues? update)
+                (recur (e/id actor) updated-game)
+
+                :else
+                (recur (.next scheduler) updated-game))))
           (throw (js/Error. "Whoa, ran out of actors to update"))))))
 
 (defn random-free-position
