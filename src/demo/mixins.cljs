@@ -1,6 +1,7 @@
 (ns demo.mixins
   (:use [cljs.core.async :only [<! timeout]]
-        [ruin.util :only [assoc-if-missing]])
+        [ruin.util :only [assoc-if-missing]]
+        [demo.helpers :only [kill]])
   (:require [ruin.level :as l]
             [demo.tiles :as ts]
             [ruin.game :as g]
@@ -11,6 +12,7 @@
             [demo.screens :as screens]
             [demo.inventory :as inv]
             [ruin.item :as i]
+            [demo.hunger :as hunger]
             [ruin.random :as random])
   (:use-macros [cljs.core.async.macros :only [go]]
                [ruin.mixin.macros :only [defmixin]])
@@ -27,10 +29,10 @@
   :is-player? true)
 
 (def player-movement-directions
-    {js/ROT.VK_LEFT [-1 0]
-     js/ROT.VK_RIGHT [1 0]
-     js/ROT.VK_UP [0 -1]
-     js/ROT.VK_DOWN [0 1]})
+  {js/ROT.VK_LEFT [-1 0]
+   js/ROT.VK_RIGHT [1 0]
+   js/ROT.VK_UP [0 -1]
+   js/ROT.VK_DOWN [0 1]})
 
 (defn try-move
   [entity {:keys [level entities]} dx dy]
@@ -77,63 +79,71 @@
             {:keys [key-events display]
              {:keys [level] :as scene} :scene
              :as game}]
-         (go (loop [[event-type key-code] (<! key-events)]
-               (if (= event-type :down)
-                 (cond
-                   ; movement
-                   (contains? player-movement-directions key-code)
-                   (let [[dx dy] (get player-movement-directions key-code)]
-                     (concat
-                       [:clear-messages this]
-                       (try-move this scene dx dy)))
+         (let [this (hunger/apply this)]
+           (cond
+             ; check for starvation
+             (hunger/starved? this)
+             (hunger/kill this)
 
-                   ; inventory viewing
-                   (= key-code js/ROT.VK_I)
-                   (do
-                     (g/refresh game)
-                     (<! (screens/item-viewing (:items this) display key-events "Inventory"))
-                     [:action-continues? true])
-
-                   ; dropping things
-                   (= key-code js/ROT.VK_D)
-                   (if-not (empty? (:items this))
-                     (do (g/refresh game)
-                       (if-let [what-to-drop (<! (screens/multiple-item-selection
-                                                   (:items this) display key-events "Choose the items you wish to drop"))]
-                         (let [[this level] (inv/drop-multiple this level what-to-drop)]
-                           [:update this
-                            :update-level level])
-                         (send-and-continue this "You dropped nothing.")))
-                     (send-and-continue this "You have nothing to drop."))
-
-                   ; picking things up
-                   (= key-code js/ROT.VK_COMMA)
-                   (let [items-on-tile (zipmap (range) (l/get-items level x y))]
+             ; otherwise, perform an action
+             :else
+             (go (loop [[event-type key-code] (<! key-events)]
+                   (if (= event-type :down)
                      (cond
-                       (empty? items-on-tile)
-                       (send-and-continue this "There is nothing to pick up.")
+                       ; movement
+                       (contains? player-movement-directions key-code)
+                       (let [[dx dy] (get player-movement-directions key-code)]
+                         (concat
+                           [:clear-messages this]
+                           (try-move this scene dx dy)))
 
-                       (= 1 (count items-on-tile))
-                       (let [[this level succeeded?] (inv/pick-up this level 0)]
-                         (if succeeded?
-                           [:update this
-                            :update-level level]
-                           (send-and-continue this "Inventory is full.")))
+                       ; inventory viewing
+                       (= key-code js/ROT.VK_I)
+                       (do
+                         (g/refresh game)
+                         (<! (screens/item-viewing (:items this) display key-events "Inventory"))
+                         [:action-continues? true])
+
+                       ; dropping things
+                       (= key-code js/ROT.VK_D)
+                       (if-not (empty? (:items this))
+                         (do (g/refresh game)
+                           (if-let [what-to-drop (<! (screens/multiple-item-selection
+                                                       (:items this) display key-events "Choose the items you wish to drop"))]
+                             (let [[this level] (inv/drop-multiple this level what-to-drop)]
+                               [:update this
+                                :update-level level])
+                             (send-and-continue this "You dropped nothing.")))
+                         (send-and-continue this "You have nothing to drop."))
+
+                       ; picking things up
+                       (= key-code js/ROT.VK_COMMA)
+                       (let [items-on-tile (zipmap (range) (l/get-items level x y))]
+                         (cond
+                           (empty? items-on-tile)
+                           (send-and-continue this "There is nothing to pick up.")
+
+                           (= 1 (count items-on-tile))
+                           (let [[this level succeeded?] (inv/pick-up this level 0)]
+                             (if succeeded?
+                               [:update this
+                                :update-level level]
+                               (send-and-continue this "Inventory is full.")))
+
+                           :else
+                           (if-let [what-to-pickup (<! (screens/multiple-item-selection
+                                                         items-on-tile display key-events "Choose the items you which to pick up"))]
+                             (let [[this level got-all?] (inv/pick-up-multiple this level what-to-pickup)]
+                               (-> [:update this
+                                    :update-level level]
+                                 (->/when (not got-all?)
+                                          (concat
+                                            [:send [[this "Inventory is full. Not all items were picked up."]]]))))
+                             (send-and-continue this "You picked up nothing."))))
 
                        :else
-                       (if-let [what-to-pickup (<! (screens/multiple-item-selection
-                                                     items-on-tile display key-events "Choose the items you which to pick up"))]
-                         (let [[this level got-all?] (inv/pick-up-multiple this level what-to-pickup)]
-                           (-> [:update this
-                                :update-level level]
-                             (->/when (not got-all?)
-                                      (concat
-                                        [:send [[this "Inventory is full. Not all items were picked up."]]]))))
-                         (send-and-continue this "You picked up nothing."))))
-
-                   :else
-                   (recur (<! key-events)))
-                 (recur (<! key-events)))))))
+                       (recur (<! key-events)))
+                     (recur (<! key-events)))))))))
 
 (defmixin
   fungus-actor
@@ -160,34 +170,27 @@
                     (assoc-if-missing :defense 0)))
 
 (defn take-damage
-  [& {:keys [on-death]}]
-  (fn [this attacker damage]
-    (let [new-hp (- (:hp this) damage)]
-      (if (> new-hp 0)
-        [:update (assoc this :hp new-hp)]
-        (concat
-          [:update (assoc this :hp 0)]
-          (on-death this attacker))))))
+  [this attacker damage]
+  (let [new-hp (- (:hp this) damage)]
+    (if (> new-hp 0)
+      [:update (assoc this :hp new-hp)]
+      (concat
+        [:update (assoc this :hp 0)
+         :send [attacker (str "You kill the " (:name this) ".")]]
+        (kill this)))))
 
 (defmixin
   destructible
   :init init-health
-  :group :destructible
-  :take-damage (take-damage
-                 :on-death
-                 (fn [this attacker]
-                   [:remove this
-                    :send [this "You die!"]
-                    :send [attacker (str "You kill the " (:name this) ".")]])))
+  :group :destructible)
+
 (defmixin
   destructible-player
   :init init-health
   :group :destructible
-  :take-damage (take-damage
-                 :on-death
-                 (fn [this attacker]
-                   [:send [this "You have died... Press [Enter] to continue!"]
-                    :player-killed? true])))
+  :on-death (fn [this]
+              [:send [this "You have died... Press [Enter] to continue"]
+               :player-killed? true]))
 
 (defmixin
   attacker
@@ -204,7 +207,7 @@
                     (concat
                       [:send [this (str "You strike the " (:name target) " for " damage " damage!")]
                        :send [target (str "The " (:name this) " strikes you for " damage " damage!")]]
-                      (e/call target :take-damage this damage))))))
+                      (take-damage target this damage))))))
 
 (defmixin
   message-recipient
@@ -230,3 +233,11 @@
   :init #(-> %
            (assoc-if-missing :inventory-size 10)
            (assoc-if-missing :items {})))
+
+(defmixin
+  eater
+  :init #(-> %
+           (assoc-if-missing :max-fullness 100)
+           (->/as e
+                  (assoc-if-missing :fullness (/ (:max-fullness e) 2)))
+           (assoc-if-missing :hunger 1)))

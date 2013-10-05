@@ -8,3 +8,15 @@
   [{:keys [level entities]} x y]
   (and (= ts/floor-tile (l/get-tile level x y))
        (not (es/at-position? entities x y))))
+
+(defn kill
+  ([{:keys [on-death] :as entity}]
+    (if on-death
+      (on-death entity)
+      [:remove entity]))
+  ([entity message]
+   (let [result
+   (concat
+     [:send [entity message]]
+     (kill entity))]
+     result)))

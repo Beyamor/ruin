@@ -38,6 +38,6 @@
   (loop [coll coll]
     (if (empty? coll)
       false
-      (if (= (first coll) val)
+      (if (= (first coll) v)
         true
         (recur (rest coll))))))
