@@ -10,6 +10,7 @@
             [demo.tiles :as ts]
             [demo.helpers :as helpers]
             [ruin.level :as l]
+            [ruin.item :as i]
             [ruin.generate :as generate])
   (:use-macros [ruin.util.macros :only [aside]]
                [cljs.core.async.macros :only [go]]
@@ -132,12 +133,10 @@
   [scene]
   (reduce
     (fn [scene _]
-      (-> scene
-        (->/in [:level]
-               (l/add-item-at-random-pos
-                 {:glyph {:char "%"
-                          :foreground "lightblue"
-                          :background "white"}}))))
+      (let [item (rand-nth [:rock :apple])]
+        (update-in scene [:level]
+                   l/add-item-at-random-pos
+                   (i/create item))))
     scene (range 100)))
 
 (defscene
