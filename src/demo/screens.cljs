@@ -12,9 +12,9 @@
        (= key-code js/ROT.VK_ESCAPE)))
 
 (defn render-item-collection
-  [{:keys [items selection]} display]
+  [{:keys [items selection]} display caption]
   (doto display
-    (d/draw-text! 0 0 "Inventory"))
+    (d/draw-text! 0 0 caption))
   (dotimes [i (count items)]
     (let [index (-> items keys (nth i))
           item (get items index)
@@ -28,9 +28,9 @@
         (d/draw-text! display 0 (+ 2 i))))))
 
 (defn item-viewing
-  [items display key-events]
+  [items display key-events caption]
   (render-item-collection
-    {:items items} display)
+    {:items items} display caption)
   (go 
     (loop [[event-type key-code] (<! key-events)]
       (if (close-command? event-type key-code)
@@ -38,10 +38,10 @@
         (recur (<! key-events))))))
 
 (defn item-selection
-  [items display key-events]
+  [items display key-events caption]
   (let [state {:items items
                :selection (-> items keys first)}]
-    (render-item-collection state display)
+    (render-item-collection state display caption)
     (go
       (loop [[event-type key-code] (<! key-events) state state]
         (cond
@@ -52,7 +52,7 @@
           (let [index (- key-code js/ROT.VK_A)]
             (if (contains? (:items state) index)
               (let [updated-state (assoc state :selection index)]
-                (render-item-collection updated-state display)
+                (render-item-collection updated-state display caption)
                 (recur (<! key-events) updated-state))
               (recur (<! key-events) state)))
 
