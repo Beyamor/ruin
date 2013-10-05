@@ -1,5 +1,8 @@
 (ns demo.items
-  (:use-macros [ruin.item.macros :only [defitem]]))
+  (:use [ruin.mixin :only [defmixin]]
+        [ruin.item :only [defitem]]
+        [ruin.util :only [assoc-if-missing]])
+  (:require-macros [lonocloud.synthread :as ->]))
 
 (defn food-description
   [{:keys [name consumptions max-consumptions]}]
@@ -7,17 +10,22 @@
     (str "partly eaten " name)
     name))
 
-(defitem
-  apple
-  :glyph {:char "@"
-          :foreground "red"}
-  :edible true
-  :food-value 5
-  :consumptions 2
-  :max-consumptions 2
-  :description food-description)
+(defmixin :edible
+          :init #(-> %
+                   (->> (merge {:max-consumptions 5
+                                :food-value 5
+                                :description food-description
+                                :edible? true}))
+                   (->/as i
+                          (assoc-if-missing :consumptions (:max-consumptions i)))))
 
-(defitem
-  rock
-  :glyph {:char "*"
-          :foreground "grey"})
+(defitem :apple
+         :glyph {:char "@"
+                 :foreground "red"}
+         :properties {:food-vaue 2
+                      :max-consumptions 2}
+         :mixins [:edible])
+
+(defitem :rock
+         :glyph {:char "*"
+                 :foreground "grey"})

@@ -37,7 +37,7 @@
   [items]
   (into {}
         (for [[index item] items
-              :when (:edible item)]
+              :when (:edible? item)]
           [index item])))
 
 (defn eat

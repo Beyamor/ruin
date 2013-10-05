@@ -1,4 +1,5 @@
 (ns ruin.scene
+  (:use [ruin.mixin :only [has-mixin?]])
   (:require [ruin.display :as d]
             [ruin.entity :as e]
             [ruin.entities :as es])
@@ -65,7 +66,7 @@
   [scene target message]
   (let [id (e/id target)]
     (-> scene
-      (->/when (e/has-mixin? target :message-recipient)
+      (->/when (has-mixin? target :message-recipient)
                (update-in [:messages id] (fnil conj []) message)))))
 
 (defn send-messages
@@ -109,5 +110,5 @@
   (es+/each
     [scene scene
      entity (:entities scene)
-     :when (e/has-mixin? entity mixin)]
+     :when (has-mixin? entity mixin)]
     (update scene (f entity scene))))

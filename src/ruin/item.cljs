@@ -1,15 +1,29 @@
 (ns ruin.item
   (:use [ruin.util :only [apply-map]]
-        [ruin.base :only [glyph]]))
+        [ruin.base :only [deftemplate get-template init-mixins add-mixin-properties]])
+  (:require [ruin.base :as base]
+            [ruin.mixin :as mixin]))
 
-(def definitions (atom {}))
+(def defitem (partial deftemplate :item))
 
 (defn create
   [item]
-  (if-let [{item-glyph :glyph :as item} (get @definitions item)]
-    (-> item
-      (assoc :glyph (apply-map glyph item-glyph)))
-    (throw (js/Error (str "Unknown item " item)))))
+  (let [{:keys [name mixins properties glyph]
+         :as item} (get-template :item item)
+        mixins (map mixin/realize mixins)]
+    (->
+      {:name name
+       :glyph (apply-map base/glyph glyph)
+       :mixins (set
+                 (for [mixin mixins]
+                   (keyword (:name mixin))))
+       :mixin-groups (set
+                       (for [mixin mixins
+                             :when (:group mixin)]
+                         (keyword (:group mixin))))}
+      (merge properties)
+      (add-mixin-properties mixins)
+      (init-mixins mixins))))
 
 (defn describe
   [{:keys [description name] :as item}]

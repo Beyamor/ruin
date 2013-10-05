@@ -1,5 +1,6 @@
 (ns demo.mixins
   (:use [cljs.core.async :only [<! timeout]]
+        [ruin.mixin :only [defmixin has-mixin?]]
         [ruin.util :only [assoc-if-missing]]
         [demo.helpers :only [kill]])
   (:require [ruin.level :as l]
@@ -14,8 +15,7 @@
             [ruin.item :as i]
             [demo.hunger :as hunger]
             [ruin.random :as random])
-  (:use-macros [cljs.core.async.macros :only [go]]
-               [ruin.mixin.macros :only [defmixin]])
+  (:use-macros [cljs.core.async.macros :only [go]])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (defn dig
@@ -25,7 +25,7 @@
              (l/set-tile x y ts/floor-tile))))
 
 (defmixin
-  is-player
+  :is-player
   :is-player? true)
 
 (def player-movement-directions
@@ -42,8 +42,8 @@
           target (es/first-at-position entities x y)]
       (cond
         ; target and we can attack, do so
-        (and target (e/has-mixin? entity :attacker)
-             (or (e/has-mixin? entity :player-actor) (e/has-mixin? target :player-actor)))
+        (and target (has-mixin? entity :attacker)
+             (or (has-mixin? entity :player-actor) (has-mixin? target :player-actor)))
         (e/call entity :try-attack target)
 
         ; target and we can't attack, do nothing
@@ -63,7 +63,7 @@
 
         ; otherwise, try digging it
         (and (:diggable? tile)
-             (e/has-mixin? entity :player-actor))
+             (has-mixin? entity :player-actor))
         [:update-level (dig level x y)]))))
 
 (defn continue
@@ -78,7 +78,7 @@
     (continue)))
 
 (defmixin
-  player-actor
+  :player-actor
   :group :actor
   :act (fn [{:keys [x y] :as this}
             {:keys [key-events display]
@@ -161,7 +161,7 @@
                      (recur (<! key-events)))))))))
 
 (defmixin
-  fungus-actor
+  :fungus-actor
   :group :actor
   :init #(assoc % :growths 5)
   :act (fn [{:keys [growths] :as this} {:keys [scene]}]
@@ -195,12 +195,12 @@
         (kill this)))))
 
 (defmixin
-  destructible
+  :destructible
   :init init-health
   :group :destructible)
 
 (defmixin
-  destructible-player
+  :destructible-player
   :init init-health
   :group :destructible
   :on-death (fn [this]
@@ -208,12 +208,12 @@
                :player-killed? true]))
 
 (defmixin
-  attacker
+  :attacker
   :group :attacker
   :init #(-> %
            (assoc-if-missing :attack 1))
   :try-attack (fn [this target]
-                (when (e/has-mixin? target :destructible)
+                (when (has-mixin? target :destructible)
                   (let [damage (->
                                  (- (:attack this) (:defense target))
                                  (max 0)
@@ -225,17 +225,17 @@
                       (take-damage target this damage))))))
 
 (defmixin
-  message-recipient
+  :message-recipient
   :get-messages (fn [this scene]
                   (s/get-messages scene this)))
 
 (defmixin
-  sight
+  :sight
   :group :sight
   :init #(-> % (assoc-if-missing :sight-radius 5)))
 
 (defmixin
-  wander-actor
+  :wander-actor
   :group :actor
   :act (fn [this {:keys [scene]}]
          (let [[dx dy] (if (random/coin-flip)
@@ -244,13 +244,13 @@
            (try-move this scene dx dy))))
 
 (defmixin
-  inventory-holder
+  :inventory-holder
   :init #(-> %
            (assoc-if-missing :inventory-size 10)
            (assoc-if-missing :items {})))
 
 (defmixin
-  eater
+  :eater
   :init #(-> %
            (assoc-if-missing :max-fullness 100)
            (->/as e

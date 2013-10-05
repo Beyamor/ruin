@@ -1,6 +1,7 @@
 (ns demo.play-scene
   (:use [cljs.core.async :only [chan put! <!]]
-        [ruin.util :only [aremove contains-val?]])
+        [ruin.util :only [aremove contains-val?]]
+        [ruin.mixin :only [has-mixin?]])
   (:require [ruin.game :as g]
             [ruin.display :as d]
             [ruin.entity :as e]
@@ -167,11 +168,11 @@
      :visible-tiles #{}
      :scheduler scheduler
      :on-add (fn [{:keys [scheduler] :as scene} entity]
-               (when (e/has-mixin? entity :actor)
+               (when (has-mixin? entity :actor)
                  (.add scheduler (e/id entity) true))
                scene)
      :on-remove (fn [{:keys [scheduler] :as scene} entity]
-                  (when (e/has-mixin? entity :actor)
+                  (when (has-mixin? entity :actor)
                     (.remove scheduler (e/id entity)))
                   scene)
      :enter (fn [game]
