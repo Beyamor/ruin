@@ -133,10 +133,9 @@
   [scene]
   (reduce
     (fn [scene _]
-      (let [item (rand-nth [:rock :apple])]
-        (update-in scene [:level]
-                   l/add-item-at-random-pos
-                   (i/create item))))
+      (let [item (-> [:rock :apple]
+                   rand-nth i/create)]
+        (update-in scene [:level] l/add-item-at-random-pos item)))
     scene (range 100)))
 
 (defscene
