@@ -1,6 +1,5 @@
 (ns demo.mixins
   (:use [cljs.core.async :only [<! timeout]]
-        [demo.entities :only [fungus]]
         [ruin.util :only [assoc-if-missing]])
   (:require [ruin.level :as l]
             [demo.tiles :as ts]
@@ -94,7 +93,8 @@
              (when (helpers/is-empty-floor? scene x y)
                {:update (-> this
                           (update-in [:growths] dec))
-                :add (e/set-pos (fungus) x y)
+                :add (-> (e/create :fungus)
+                       (e/set-pos x y))
                 :send (for [entity (es/nearby (:entities scene) x y)]
                         [entity "The fungus is spreading!"])})))))
 

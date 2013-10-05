@@ -1,8 +1,10 @@
 (ns ruin.entity
-  (:use [ruin.util :only [apply-map dissoc-all]]
-        [ruin.base :only [glyph]])
-  (:require [ruin.mixin :as mixin])
+  (:use [ruin.util :only [apply-map dissoc-all]])
+  (:require [ruin.mixin :as mixin]
+            [ruin.base :as base])
   (:require-macros [lonocloud.synthread :as ->]))
+
+(def definitions (atom {}))
 
 (def id-store (atom 0))
 
@@ -36,17 +38,15 @@
     entity
     (::id entity)))
 
-(defn create
-  [& {:keys [id x y name mixins]
-      :or {x 0 y 0 name "" mixins []}
-      :as properties}]
-  (let [mixins (map mixin/realize mixins)]
+(defn- create*
+  [{:keys [name glyph mixins properties]}]
+    (let [mixins (map mixin/realize mixins)]
     (->
-             {::id id
-              :x x
-              :y y
+             {::id (next-id)
+              :x 0
+              :y 0
               :name name
-              :glyph (apply-map glyph properties)
+              :glyph (apply-map base/glyph glyph)
               :mixins (set
                         (for [mixin mixins]
                           (:name mixin)))
@@ -54,15 +54,15 @@
                               (for [mixin mixins
                                     :when (:group mixin)]
                                 (:group mixin)))}
-      (merge
-        (dissoc-all properties :x :y :name :glyph :mixins :mixin-groups))
+      (merge properties)
       (add-mixin-properties mixins)
       (init-mixins mixins))))
 
-(defn define
-  [& properties]
-  (fn []
-    (apply create :id (next-id) properties)))
+(defn create
+  [entity]
+  (if-let [entity (get @definitions entity)]
+    (create* entity)
+    (throw (js/Error. (str "Unknown entity " entity)))))
 
 (defn has-mixin?
   [e mixin]
