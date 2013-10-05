@@ -18,11 +18,12 @@
 
 (defn change-scene
   [{old-scene :scene :as game} new-scene]
-  (-> game
-    (->/when old-scene
-             (->> (s/exit old-scene)))
-    (assoc :scene new-scene)
-    (assoc :camera {:x 0 :y 0})
-    (->> (s/enter new-scene))
-    (->/aside game
-              (refresh game))))
+  (let [new-scene (s/create new-scene)]
+    (-> game
+      (->/when old-scene
+               (->> (s/exit old-scene)))
+      (assoc :scene new-scene)
+      (assoc :camera {:x 0 :y 0})
+      (->> (s/enter new-scene))
+      (->/aside game
+                (refresh game)))))

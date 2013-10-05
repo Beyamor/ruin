@@ -6,6 +6,7 @@
                    [ruin.entities.macros :as es+])
   (:refer-clojure :exclude [remove]))
 
+
 (defn enter
   [{:keys [enter]
     :or {enter identity}} game]
@@ -45,12 +46,20 @@
              (->/in [:entities]
                     (es/remove! entity)))))
 
-(defn create
-  [{:as scene}]
+(defn create*
+  [scene]
   (->
     {:entities (es/create)
      :messages {}}
     (merge scene)))
+
+(def scene-definitions (atom {}))
+
+(defn create
+  [scene & args]
+  (if-let [constructor (get @scene-definitions scene)]
+    (create* (apply constructor args))
+    (throw (js/Error (str "Undefined scene: " scene)))))
 
 (defn send-message
   [scene target message]

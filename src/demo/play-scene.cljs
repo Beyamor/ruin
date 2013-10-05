@@ -13,7 +13,8 @@
             [ruin.level :as l]
             [ruin.generate :as generate])
   (:use-macros [ruin.util.macros :only [aside]]
-               [cljs.core.async.macros :only [go]])
+               [cljs.core.async.macros :only [go]]
+               [ruin.scene.macros :only [defscene]])
   (:require-macros [lonocloud.synthread :as ->]
                    [ruin.entities.macros :as es+]))
 
@@ -46,7 +47,7 @@
         top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))]
     (doto display
       (d/draw-tiles! level :left left :top top :screen {:height (dec display-height)}
-                    :only :explored? :transform (d/highlight-visible-tiles visible-tiles))
+                     :only :explored? :transform (d/highlight-visible-tiles visible-tiles))
       (d/draw-entities! entities :left left :top top :screen {:height (dec display-height)}
                         :only (d/visible? visible-tiles))
       (d/draw-text! 0 (dec display-height) (str "HP: " (:hp player) "/" (:max-hp player)) )
@@ -74,24 +75,13 @@
     (update-visible-tiles player)
     update-explored-tiles))
 
-;
-; TODO: move this somewhere else
-;
-(defn game-over-scene
-  []
-  (s/create
-    {:render (fn [{:keys [display]}]
-               (doto display
-                 (d/draw-text! 1 1 "Game Over" :foreground "red")))
-     :go (fn [_] (chan))}))
-
 (defn acknowledge-death
   [{:keys [key-events] :as game}]
   (g/refresh game)
   (go (loop [[event-type key-code] (<! key-events)]
         (if (and (= event-type :down)
                  (= key-code js/ROT.VK_RETURN))
-          (g/change-scene game (game-over-scene))
+          (g/change-scene game :game-over)
           (recur (<! key-events))))))
 
 (defn go-play
@@ -138,8 +128,8 @@
                    (assoc :y y))))))
     scene (range 100)))
 
-(defn play-scene
-  []
+(defscene
+  play
   (let [width 100
         height 48
         level (l/create width height
@@ -154,21 +144,22 @@
                  (assoc :x player-x)
                  (assoc :y player-y))
         scheduler (js/ROT.Scheduler.Simple.)]
-    (->
-      (s/create
-        {:render render
-         :go go-play
-         :level level
-         :scheduler scheduler
-         :on-add (fn [{:keys [scheduler] :as scene} entity]
-                   (when (e/has-mixin? entity :actor)
-                     (.add scheduler (e/id entity) true))
-                   scene)
-         :on-remove (fn [{:keys [scheduler] :as scene} entity]
-                      (when (e/has-mixin? entity :actor)
-                        (.remove scheduler (e/id entity)))
-                      scene)
-         :visible-tiles #{}})
-      (s/add player)
-      (update-seen-tiles player)
-      add-enemies)))
+    {:render render
+     :go go-play
+     :level level
+     :visible-tiles #{}
+     :scheduler scheduler
+     :on-add (fn [{:keys [scheduler] :as scene} entity]
+               (when (e/has-mixin? entity :actor)
+                 (.add scheduler (e/id entity) true))
+               scene)
+     :on-remove (fn [{:keys [scheduler] :as scene} entity]
+                  (when (e/has-mixin? entity :actor)
+                    (.remove scheduler (e/id entity)))
+                  scene)
+     :enter (fn [game]
+              (-> game
+                (->/in [:scene]
+                       (s/add player)
+                       (update-seen-tiles player)
+                       add-enemies)))}))
