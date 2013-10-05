@@ -28,6 +28,7 @@
 (defn render-item-collection
   [items display caption selected?]
   (doto display
+    d/clear!
     (d/draw-text! 0 0 caption))
   (dotimes [i (count items)]
     (let [index (-> items keys (nth i))
