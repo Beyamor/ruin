@@ -10,6 +10,15 @@
   [level x y item]
   (update-in level [:items x y] (fnil conj []) item))
 
+(defn remove-first-item
+  [level x y]
+  (let [items (get-items level x y)]
+    (if (empty? items)
+      [nil level]
+      [(peek items)
+       (update-in level [:items] pop)])))
+
+
 (defn add-item-at-random-pos
   [level item]
   (add-item level

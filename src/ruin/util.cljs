@@ -23,3 +23,7 @@
 (defn dissoc-all
   [m & ks]
   (reduce dissoc m ks))
+
+(defn remove-index
+  [v index]
+  (vec (concat (subvec v 0 index) (subvec v (inc index)))))

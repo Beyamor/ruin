@@ -8,6 +8,7 @@
             [ruin.entity :as e]
             [ruin.entities :as es]
             [demo.helpers :as helpers]
+            [demo.screens :as screens]
             [ruin.random :as random])
   (:use-macros [cljs.core.async.macros :only [go]]
                [ruin.mixin.macros :only [defmixin]])
@@ -34,17 +35,11 @@
   is-player
   :is-player? true)
 
-(defn get-player-movement-direction
-  [key-events]
-  (go (loop [[event-type key-code] (<! key-events)]
-        (if (= :down event-type)
-          (cond 
-            (= key-code js/ROT.VK_LEFT) [-1 0]
-            (= key-code js/ROT.VK_RIGHT) [1 0]
-            (= key-code js/ROT.VK_UP) [0 -1]
-            (= key-code js/ROT.VK_DOWN) [0 1]
-            :else (recur (<! key-events)))
-          (recur (<! key-events))))))
+(def player-movement-directions
+    {js/ROT.VK_LEFT [-1 0]
+     js/ROT.VK_RIGHT [1 0]
+     js/ROT.VK_UP [0 -1]
+     js/ROT.VK_DOWN [0 1]})
 
 (defn try-move
   [entity {:keys [level entities]} dx dy]
@@ -75,11 +70,22 @@
 (defmixin
   player-actor
   :group :actor
-  :act (fn [this {:keys [scene key-events]}]
-         (go (let [[dx dy] (<! (get-player-movement-direction key-events))]
-               (merge-messages
-                 {:clear-messages this}
-                 (try-move this scene dx dy))))))
+  :act (fn [this {:keys [scene key-events display] :as game}]
+         (go (loop [[event-type key-code] (<! key-events)]
+               (if (= event-type :down)
+                 (cond
+                   (contains? player-movement-directions key-code)
+                   (let [[dx dy] (get player-movement-directions key-code)]
+                     (merge-messages
+                       {:clear-messages this}
+                       (try-move this scene dx dy)))
+
+                   (= key-code ROT.VK_I)
+                   (do
+                     (<! (screens/inventory this display key-events))
+                     (g/refresh game)
+                     (recur (<! key-events))))
+                 (recur (<! key-events)))))))
 
 (defmixin
   fungus-actor
@@ -169,3 +175,9 @@
                          [(random/plus-minus) 0]
                          [0 (random/plus-minus)])]
            (try-move this scene dx dy))))
+
+(defmixin
+  inventory-holder
+  :init #(-> %
+           (assoc-if-missing :inventory-size 10)
+           (assoc-if-missing :items {})))
