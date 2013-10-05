@@ -11,6 +11,14 @@
   (and (= event-type :down)
        (= key-code js/ROT.VK_ESCAPE)))
 
+(defn select-command?
+  [event-type key-code]
+  (and (>= key-code js/ROT.VK_A) (<= key-code js/ROT.VK_Z)))
+
+(defn key->selection
+  [key-code]
+  (- key-code js/ROT.VK_A))
+
 (defn render-item-collection
   [{:keys [items selection]} display caption]
   (doto display
@@ -48,13 +56,12 @@
           (close-command? event-type key-code)
           (:selection state)
 
-          (and (>= key-code js/ROT.VK_A) (<= key-code js/ROT.VK_Z))
-          (let [index (- key-code js/ROT.VK_A)]
-            (if (contains? (:items state) index)
-              (let [updated-state (assoc state :selection index)]
-                (render-item-collection updated-state display caption)
-                (recur (<! key-events) updated-state))
-              (recur (<! key-events) state)))
+          (and (select-command? event-type key-code)
+               (contains? (:items state) (key->selection key-code)))
+          (let [index (key->selection key-code)
+                updated-state (assoc state :selection index)]
+            (render-item-collection updated-state display caption)
+            (recur (<! key-events) updated-state))
 
           :else
           (recur (<! key-events) state))))))
