@@ -1,11 +1,8 @@
 (ns demo.inventory
   (:use [ruin.util :only [remove-index]])
-  (:require [ruin.level :as l])
-  (:refer-clojure :exclude [empty? remove drop]))
-
-(defn empty?
-  [{:keys [items]}]
-  (cljs/empty? items))
+  (:require [ruin.level :as l]
+            [clojure.set :as set])
+  (:refer-clojure :exclude [remove drop]))
 
 (defn full?
   [{:keys [inventory-size items]}]
@@ -38,13 +35,25 @@
   [(update-in entity [:items] dissoc which)
    (get-in entity [:items which])])
 
+(defn pick-up
+  [{:keys [x y] :as entity} level index]
+  (if (has-room? entity)
+    (let [[updated-level item] (l/remove-item level x y index)]
+      [(add entity item) updated-level true])
+    [entity level false]))
+
 (defn pick-up-multiple
   [{:keys [x y] :as entity} level indices]
-  (if (has-room? entity indices)
-    (let [[updated-level items] (l/remove-items level x y indices)]
-      [(add-all entity items) updated-level])
-    (throw (js/Error. (str "Whoa, not enough room in the inventory! "
-                           (count indices) " + " (count (:items entity)) " / " (:inventory-size entity))))))
+  (let [indices (set indices)
+        [entity untouched-indices] (loop [entity entity indices indices]
+                                     (if (or (empty? indices)
+                                             (not (has-room? entity)))
+                                       [entity indices]
+                                       (recur(add entity (l/get-item level x y (first indices)))
+                                              (rest indices))))
+        removed-indices (set/difference indices untouched-indices)
+        [level _] (l/remove-items level x y removed-indices)]
+    [entity level (empty? untouched-indices)]))
 
 (defn drop
   [{:keys [x y] :as entity} level which]

@@ -1,14 +1,24 @@
 (ns ruin.level
-  (:use [ruin.base :only [null-tile]])
+  (:use [ruin.base :only [null-tile]]
+        [ruin.util :only [remove-index]])
   (:require [ruin.array2d :as a2d]))
 
 (defn get-items
   ([level x y]
     (get-in level [:items x y])))
 
+(defn get-item
+  [level x y index]
+  (nth (get-items level x y) index))
+
 (defn add-item
   [level x y item]
   (update-in level [:items x y] (fnil conj []) item))
+
+(defn remove-item
+  [level x y index]
+  [(update-in level [:items x y] remove-index index)
+   (first (get-items level x y))])
 
 (defn remove-items
   [level x y indexes]

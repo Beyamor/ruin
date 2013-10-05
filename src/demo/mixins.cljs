@@ -122,15 +122,27 @@
                    ; picking things up
                    (= key-code js/ROT.VK_COMMA)
                    (let [items-on-tile (zipmap (range) (l/get-items level x y))]
-                     (if-not (empty? items-on-tile)
+                     (cond
+                       (empty? items-on-tile)
+                       (send-and-continue this "There is nothing to pick up.")
+
+                       (= 1 (count items-on-tile))
+                       (let [[this level succeeded?] (inv/pick-up this level 0)]
+                         (if succeeded?
+                           {:update this
+                            :update-level level}
+                           (send-and-continue this "Inventory is full.")))
+
+                       :else
                        (if-let [what-to-pickup (<! (screens/multiple-item-selection
                                                      items-on-tile display key-events "Choose the items you which to pick up"))]
-                         (let [[this level] (inv/pick-up-multiple this level what-to-pickup)]
-                           {:update this
-                            :update-level level})
-                         (send-and-continue this "You picked up nothing."))
-                       (send-and-continue this "There is nothing to pick up.")))
-
+                         (let [[this level got-all?] (inv/pick-up-multiple this level what-to-pickup)]
+                           (-> {:update this
+                                :update-level level}
+                             (->/when (not got-all?)
+                                      (merge-messages
+                                        {:send [[this "Inventory is full. Not all items were picked up."]]}))))
+                         (send-and-continue this "You picked up nothing."))))
 
                    :else
                    (recur (<! key-events)))
