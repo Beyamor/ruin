@@ -1,7 +1,11 @@
 (ns demo.inventory
   (:use [ruin.util :only [remove-index]])
   (:require [ruin.level :as l])
-  (:refer-clojure :exclude [remove drop]))
+  (:refer-clojure :exclude [empty? remove drop]))
+
+(defn empty?
+  [{:keys [items]}]
+  (cljs/empty? items))
 
 (defn full?
   [{:keys [inventory-size items]}]

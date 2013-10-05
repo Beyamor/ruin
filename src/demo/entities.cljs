@@ -13,7 +13,13 @@
            :sight]
   :properties {:attack 10
                :sight-radius 8
-               :max-hp 10})
+               :max-hp 10
+               :items {0 {:name "apple"
+                          :glyph {:char "@"
+                                  :foreground "red"}}
+                       1 {:name "pear"
+                          :glyph {:char "&"
+                                  :foreground "green"}}}})
 
 (defentity
   fungus

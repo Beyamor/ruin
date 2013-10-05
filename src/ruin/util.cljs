@@ -27,3 +27,8 @@
 (defn remove-index
   [v index]
   (vec (concat (subvec v 0 index) (subvec v (inc index)))))
+
+(def int->letter
+  (into {}
+        (for [i (range 26)]
+          [i (String/fromCharCode (+ i 65))])))
