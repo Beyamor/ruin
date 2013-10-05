@@ -16,17 +16,6 @@
                [ruin.mixin.macros :only [defmixin]])
   (:require-macros [lonocloud.synthread :as ->]))
 
-(defn merge-messages
-  [m1 m2]
-  (reduce
-    (fn [m [k v]]
-      (if-not (contains? m k)
-        (assoc m k v)
-        (case k
-          :send (update-in m [k] concat v)
-          (throw (js/Error. (str "Unhandled duplicate key: " k))))))
-    m1 m2))
-
 (defn dig
   [level x y]
   (-> level
@@ -62,26 +51,24 @@
         ; if the tile's free, walk on it
         (:walkable? tile)
         (let [items (l/get-items level x y)]
-          (-> {:update (e/set-pos entity x y)}
+          (-> [:update (e/set-pos entity x y)]
             (->/when (not (empty? items))
                      (->/let [message (if (= (count items) 1)
                                         (str "You see " (i/describe-a (first items)) ".")
                                         (str "There are several items here."))]
-                             (merge-messages
-                               {:send [[entity message]]})))))
+                             (concat [:send [entity message]])))))
 
 
         ; otherwise, try digging it
         (and (:diggable? tile)
              (e/has-mixin? entity :player-actor))
-        {:update-level
-         (dig level x y)}))))
+        [:update-level (dig level x y)]))))
 
 (defn send-and-continue
   [this message]
-  {:clear-messages this
-   :send [[this message]]
-   :action-continues? true})
+  [:clear-messages this
+   :send [this message]
+   :action-continues? true])
 
 (defmixin
   player-actor
@@ -96,8 +83,8 @@
                    ; movement
                    (contains? player-movement-directions key-code)
                    (let [[dx dy] (get player-movement-directions key-code)]
-                     (merge-messages
-                       {:clear-messages this}
+                     (concat
+                       [:clear-messages this]
                        (try-move this scene dx dy)))
 
                    ; inventory viewing
@@ -105,7 +92,7 @@
                    (do
                      (g/refresh game)
                      (<! (screens/item-viewing (:items this) display key-events "Inventory"))
-                     {:action-continues? true})
+                     [:action-continues? true])
 
                    ; dropping things
                    (= key-code js/ROT.VK_D)
@@ -114,8 +101,8 @@
                        (if-let [what-to-drop (<! (screens/multiple-item-selection
                                                    (:items this) display key-events "Choose the items you wish to drop"))]
                          (let [[this level] (inv/drop-multiple this level what-to-drop)]
-                           {:update this
-                            :update-level level})
+                           [:update this
+                            :update-level level])
                          (send-and-continue this "You dropped nothing.")))
                      (send-and-continue this "You have nothing to drop."))
 
@@ -129,19 +116,19 @@
                        (= 1 (count items-on-tile))
                        (let [[this level succeeded?] (inv/pick-up this level 0)]
                          (if succeeded?
-                           {:update this
-                            :update-level level}
+                           [:update this
+                            :update-level level]
                            (send-and-continue this "Inventory is full.")))
 
                        :else
                        (if-let [what-to-pickup (<! (screens/multiple-item-selection
                                                      items-on-tile display key-events "Choose the items you which to pick up"))]
                          (let [[this level got-all?] (inv/pick-up-multiple this level what-to-pickup)]
-                           (-> {:update this
-                                :update-level level}
+                           (-> [:update this
+                                :update-level level]
                              (->/when (not got-all?)
-                                      (merge-messages
-                                        {:send [[this "Inventory is full. Not all items were picked up."]]}))))
+                                      (concat
+                                        [:send [[this "Inventory is full. Not all items were picked up."]]]))))
                          (send-and-continue this "You picked up nothing."))))
 
                    :else
@@ -158,12 +145,13 @@
            (let [x (+ (:x this) -1 (rand-int 3))
                  y (+ (:y this) -1 (rand-int 3))]
              (when (helpers/is-empty-floor? scene x y)
-               {:update (-> this
-                          (update-in [:growths] dec))
-                :add (-> (e/create :fungus)
-                       (e/set-pos x y))
-                :send (for [entity (es/nearby (:entities scene) x y)]
-                        [entity "The fungus is spreading!"])})))))
+               (apply concat
+                      [:update (-> this
+                                 (update-in [:growths] dec))
+                       :add (-> (e/create :fungus)
+                              (e/set-pos x y))]
+                      (for [entity (es/nearby (:entities scene) x y)]
+                        [:send [entity "The fungus is spreading!"]])))))))
 
 (def init-health #(-> %
                     (assoc-if-missing :max-hp 10)
@@ -176,9 +164,9 @@
   (fn [this attacker damage]
     (let [new-hp (- (:hp this) damage)]
       (if (> new-hp 0)
-        {:update (assoc this :hp new-hp)}
-        (merge
-          {:update (assoc this :hp 0)}
+        [:update (assoc this :hp new-hp)]
+        (concat
+          [:update (assoc this :hp 0)]
           (on-death this attacker))))))
 
 (defmixin
@@ -188,9 +176,9 @@
   :take-damage (take-damage
                  :on-death
                  (fn [this attacker]
-                   {:remove this
-                    :send [[this "You die!"]
-                           [attacker (str "You kill the " (:name this) ".")]]})))
+                   [:remove this
+                    :send [this "You die!"]
+                    :send [attacker (str "You kill the " (:name this) ".")]])))
 (defmixin
   destructible-player
   :init init-health
@@ -198,8 +186,8 @@
   :take-damage (take-damage
                  :on-death
                  (fn [this attacker]
-                   {:send [[this "You have died... Press [Enter] to continue!"]]
-                    :player-killed? true})))
+                   [:send [this "You have died... Press [Enter] to continue!"]
+                    :player-killed? true])))
 
 (defmixin
   attacker
@@ -213,9 +201,9 @@
                                  (max 0)
                                  rand-int
                                  inc)]
-                    (merge-messages
-                      {:send [[this (str "You strike the " (:name target) " for " damage " damage!")]
-                              [target (str "The " (:name this) " strikes you for " damage " damage!")]]}
+                    (concat
+                      [:send [this (str "You strike the " (:name target) " for " damage " damage!")]
+                       :send [target (str "The " (:name this) " strikes you for " damage " damage!")]]
                       (e/call target :take-damage this damage))))))
 
 (defmixin

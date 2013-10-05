@@ -32,3 +32,12 @@
   (into {}
         (for [i (range 26)]
           [i (String/fromCharCode (+ i 65))])))
+
+(defn contains-val?
+  [coll v]
+  (loop [coll coll]
+    (if (empty? coll)
+      false
+      (if (= (first coll) val)
+        true
+        (recur (rest coll))))))

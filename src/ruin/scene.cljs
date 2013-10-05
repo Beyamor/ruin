@@ -89,27 +89,20 @@
   scene)
 
 (defn update
-  [scene {updated-entity :update
-          added-entity :add
-          removed-entity :remove
-          updated-level :update-level
-          messages :send
-          messages-to-clear :clear-messages
-          :as updates}]
-  (-> scene
-    (->/when updates
-             (->/when updated-entity
-                      (update-entity updated-entity))
-             (->/when updated-level
-                      (assoc :level updated-level))
-             (->/when removed-entity
-                      (remove removed-entity))
-             (->/when added-entity
-                      (add added-entity))
-             (->/when messages-to-clear
-                      (clear-messages messages-to-clear))
-             (->/when messages
-                      (send-messages messages)))))
+  [scene instructions]
+  (let [instructions (partition 2 instructions)]
+    (reduce
+      (fn [scene [instruction value]]
+        (case instruction
+          :add (add scene value)
+          :update (update-entity scene value)
+          :send (let [[target message] value]
+                  (send-message scene target message))
+          :clear-messages (clear-messages scene value)
+          :remove (remove scene value)
+          :update-level (assoc scene :level value)
+          scene))
+      scene instructions)))
 
 (defn update-by-mixins
   [scene mixin f]

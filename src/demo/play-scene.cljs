@@ -1,6 +1,6 @@
 (ns demo.play-scene
   (:use [cljs.core.async :only [chan put! <!]]
-        [ruin.util :only [aremove]])
+        [ruin.util :only [aremove contains-val?]])
   (:require [ruin.game :as g]
             [ruin.display :as d]
             [ruin.entity :as e]
@@ -99,17 +99,17 @@
               (g/refresh game))
             (let [update (-> (e/call actor :act game)
                            (->/as update
-                                  (->/when (and update (not (map? update))) <!)))
+                                  (->/when (and update (not (coll? update))) <!)))
                   updated-scene (-> scene
                                   (s/update update)
                                   (->/when is-player?
                                            (update-seen-tiles actor)))
                   updated-game (assoc game :scene updated-scene)]
               (cond
-                (:player-killed? update)
+                (contains-val? update :player-killed?)
                 (<! (acknowledge-death updated-game))
 
-                (:action-continues? update)
+                (contains-val? update :action-continues?)
                 (recur (e/id actor) updated-game)
 
                 :else

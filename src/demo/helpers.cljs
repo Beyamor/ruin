@@ -7,4 +7,4 @@
 (defn is-empty-floor?
   [{:keys [level entities]} x y]
   (and (= ts/floor-tile (l/get-tile level x y))
-       (not (es/at-position entities x y))))
+       (not (es/at-position? entities x y))))
