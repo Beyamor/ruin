@@ -48,6 +48,8 @@
     (doto display
       (d/draw-tiles! level :left left :top top :screen {:height (dec display-height)}
                      :only :explored? :transform (d/highlight-visible-tiles visible-tiles))
+      (d/draw-items! level :left left :top top :screen {:height (dec display-height)}
+                     :on visible-tiles)
       (d/draw-entities! entities :left left :top top :screen {:height (dec display-height)}
                         :only (d/visible? visible-tiles))
       (d/draw-text! 0 (dec display-height) (str "HP: " (:hp player) "/" (:max-hp player)) )
@@ -126,6 +128,18 @@
                  (e/set-pos (entity) x y)))))
     scene (range 100)))
 
+(defn add-items
+  [scene]
+  (reduce
+    (fn [scene _]
+      (-> scene
+        (->/in [:level]
+               (l/add-item-at-random-pos
+                 {:glyph {:char "%"
+                          :foreground "lightblue"
+                          :background "white"}}))))
+    scene (range 100)))
+
 (defscene
   play
   (let [width 100
@@ -158,4 +172,5 @@
                 (->/in [:scene]
                        (s/add player)
                        (update-seen-tiles player)
-                       add-enemies)))}))
+                       add-enemies
+                       add-items)))}))

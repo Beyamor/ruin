@@ -2,6 +2,21 @@
   (:use [ruin.base :only [null-tile]])
   (:require [ruin.array2d :as a2d]))
 
+(defn get-items
+  [level x y]
+  (get-in level [:items x y]))
+
+(defn add-item
+  [level x y item]
+  (update-in level [:items x y] (fnil conj []) item))
+
+(defn add-item-at-random-pos
+  [level item]
+  (add-item level
+            (rand-int (:width level))
+            (rand-int (:height level))
+            item))
+
 (defn get-tile
   [{:keys [height width] :as level} x y]
   (if (and x y
@@ -27,7 +42,8 @@
   [width height tiles]
   {:width width
    :height height
-   :tiles tiles})
+   :tiles tiles
+   :items {}})
 
 (defn fov
   [level & {:keys [vision]
