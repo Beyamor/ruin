@@ -1,5 +1,6 @@
 (ns demo.hunger
-  (:require [demo.helpers :as helpers])
+  (:require [demo.helpers :as helpers]
+            [ruin.item :as i])
   (:require-macros [lonocloud.synthread :as ->])
   (:refer-clojure :exclude [apply]))
 
@@ -31,3 +32,22 @@
       (>= percent 95) "Oversatiated"
       (>= percent 75) "Full"
       :else "Not Hungry")))
+
+(defn edible-items
+  [items]
+  (into {}
+        (for [[index item] items
+              :when (:edible item)]
+          [index item])))
+
+(defn eat
+  [entity which]
+  (let [item (get-in entity [:items which])]
+    [:send
+     [entity (str "You eat " (i/describe-a item) ".")]
+     :update
+     (-> entity
+      (update-in [:fullness] + (:food-value item))
+      (->/if (> (:consumptions item) 1)
+             (update-in [:items which :consumptions] dec)
+             (update-in [:items] dissoc which)))]))

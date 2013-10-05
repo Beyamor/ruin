@@ -66,11 +66,16 @@
              (e/has-mixin? entity :player-actor))
         [:update-level (dig level x y)]))))
 
+(defn continue
+  []
+  [:action-continues? true])
+
 (defn send-and-continue
   [this message]
-  [:clear-messages this
-   :send [this message]
-   :action-continues? true])
+  (concat
+    [:clear-messages this
+     :send [this message]]
+    (continue)))
 
 (defmixin
   player-actor
@@ -140,6 +145,16 @@
                                           (concat
                                             [:send [[this "Inventory is full. Not all items were picked up."]]]))))
                              (send-and-continue this "You picked up nothing."))))
+
+                       ; eating things
+                       (= key-code js/ROT.VK_E)
+                       (let [edible-items (hunger/edible-items (:items this))]
+                         (if-not (empty? edible-items)
+                           (if-let [what-to-eat (<! (screens/item-selection
+                                                      edible-items display key-events "Choose the item you wish to eat"))]
+                             (hunger/eat this what-to-eat)
+                             (continue))
+                           (send-and-continue this "Nothing to eat.")))
 
                        :else
                        (recur (<! key-events)))

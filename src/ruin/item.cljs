@@ -1,16 +1,23 @@
-(ns ruin.item)
+(ns ruin.item
+  (:use [ruin.util :only [apply-map]]
+        [ruin.base :only [glyph]]))
 
 (def definitions (atom {}))
 
 (defn create
   [item]
-  (if-let [item (get @definitions item)]
-    item
+  (if-let [{item-glyph :glyph :as item} (get @definitions item)]
+    (-> item
+      (assoc :glyph (apply-map glyph item-glyph)))
     (throw (js/Error (str "Unknown item " item)))))
 
 (defn describe
-  [item]
-  (:name item))
+  [{:keys [description name] :as item}]
+  (if description
+    (if (string? description)
+      description
+      (description item))
+    name))
 
 (defn describe-a
   ([item capitalize?]

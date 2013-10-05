@@ -17,12 +17,7 @@
                :sight-radius 8
                :max-hp 10
                :inventory-size 3
-               :items {0 {:name "apple"
-                          :glyph {:char "@"
-                                  :foreground "red"}}
-                       1 {:name "pear"
-                          :glyph {:char "&"
-                                  :foreground "green"}}}})
+               :max-fullness 100})
 
 (defentity
   fungus
