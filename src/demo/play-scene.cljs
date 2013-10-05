@@ -9,6 +9,7 @@
             [ruin.entities :as es]
             [demo.tiles :as ts]
             [demo.helpers :as helpers]
+            [demo.hunger :as hunger]
             [ruin.level :as l]
             [ruin.item :as i]
             [ruin.generate :as generate])
@@ -44,7 +45,8 @@
         center-x (:x player)
         center-y (:y player)
         left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
-        top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))]
+        top (-> center-y (- (/ display-height 2)) (max 0) (min (- level-height display-height)))
+        hunger-state (hunger/describe-state player)]
     (doto display
       (d/draw-tiles! level :left left :top top :screen {:height (dec display-height)}
                      :only :explored? :transform (d/highlight-visible-tiles visible-tiles))
@@ -53,7 +55,8 @@
       (d/draw-entities! entities :left left :top top :screen {:height (dec display-height)}
                         :only (d/visible? visible-tiles))
       (d/draw-text! 0 (dec display-height) (str "HP: " (:hp player) "/" (:max-hp player)) )
-      (print-messages (s/get-messages scene player)))))
+      (print-messages (s/get-messages scene player))
+      (d/draw-text! (- display-width (count hunger-state) 1) (dec display-height) hunger-state))))
 
 (defn update-visible-tiles
   [{:keys [level] :as scene} player]

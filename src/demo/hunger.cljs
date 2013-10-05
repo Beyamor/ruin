@@ -22,7 +22,7 @@
   [entity]
   (helpers/kill entity "You have died of starvation!"))
 
-(defn state
+(defn describe-state
   [{:keys [fullness max-fullness]}]
   (let [percent (* 100 (/ fullness max-fullness))]
     (cond
