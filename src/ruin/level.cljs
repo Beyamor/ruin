@@ -18,7 +18,6 @@
       [(peek items)
        (update-in level [:items] pop)])))
 
-
 (defn add-item-at-random-pos
   [level item]
   (add-item level

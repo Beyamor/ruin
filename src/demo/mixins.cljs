@@ -82,7 +82,7 @@
 
                    (= key-code ROT.VK_I)
                    (do
-                     (<! (screens/inventory this display key-events))
+                     (<! (screens/item-selection (:items this) display key-events))
                      (g/refresh game)
                      (recur (<! key-events))))
                  (recur (<! key-events)))))))
