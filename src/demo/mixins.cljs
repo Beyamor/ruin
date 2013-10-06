@@ -18,6 +18,16 @@
   (:use-macros [cljs.core.async.macros :only [go]])
   (:require-macros [lonocloud.synthread :as ->]))
 
+(defn weapon
+  [entity]
+  (when (:weapon entity)
+    (get (:items entity) (:weapon entity))))
+
+(defn armor
+  [entity]
+  (when (:armor entity)
+    (get (:items entity) (:armor entity))))
+
 (defn dig
   [level x y]
   (-> level
@@ -136,6 +146,7 @@
                              (if succeeded?
                                [:update this
                                 :update-level updated-level
+                                :clear-messages this
                                 :send [this (str "You picked up " (i/describe-a item) ".")]]
                                (send-and-continue this "Inventory is full.")))
 
@@ -148,6 +159,7 @@
                                (let [[this level got-all?] (inv/pick-up-multiple this level response)]
                                  (-> [:update this
                                       :update-level level
+                                      :clear-messages this
                                       :send [this "You picked up the items."]]
                                    (->/when (not got-all?)
                                             (concat
@@ -168,8 +180,11 @@
                        (and (not shift?) (= key-code js/ROT.VK_W))
                        (let [wieldable-items (filter-map :wieldable? (:items this))]
                          (if-not (empty? wieldable-items)
-                             (let [response (<! (screens/item-selection
-                                   wieldable-items display key-events "Choose the item you wish to wield" true))]
+                             (let [initial-selection (or (:weapon this) :none)
+                                   response (<! (screens/item-selection
+                                   wieldable-items display key-events "Choose the item you wish to wield"
+                                                  :can-select-none? true
+                                                  :initial-selection initial-selection))]
                                (cond
                                  (= response :cancel)
                                  (continue)
@@ -178,14 +193,13 @@
                                  (if (nil? (:weapon this))
                                    (continue)
                                    [:update (assoc this :weapon nil)
-                                    :send [this (str "Unequipped the " (i/describe (:weapon this)) ".")]]) 
+                                    :clear-messages this
+                                    :send [this (str "Unequipped the " (i/describe (weapon this)) ".")]]) 
 
-                                 ; TODO ughhhh i gotta give the weapons ids
-                                 ; cause right now there's going to be a bug
-                                 ; where if you drop an item, it'll still be equipped
                                  :else
                                  (let [weapon (get (:items this) response)]
-                                   [:update (assoc this :weapon (get (:items this) response))
+                                   [:update (assoc this :weapon response)
+                                    :clear-messages this
                                     :send [this (str "Equipped the " (i/describe weapon))]])))
                            (send-and-continue this "Nothing to wield")))
 
@@ -260,16 +274,16 @@
                 (when (has-mixin? target :destructible)
                   (let [equipper? (has-mixin? this :equipper)
                         total-attack (-> (:attack this)
-                                       (->/when (and equipper? (:weapon this))
-                                                (+ (:attack (:weapon this))))
-                                       (->/when (and equipper? (:armor this))
-                                                (+ (:attack (:armor this)))))
+                                       (->/when (and equipper? (weapon this))
+                                                (+ (:attack (weapon this))))
+                                       (->/when (and equipper? (armor this))
+                                                (+ (:attack (armor this)))))
                         equpper? (has-mixin? target :equipper)
                         total-defense (-> (:defense this)
-                                        (->/when (and equipper? (:weapon this))
-                                                 (+ (:defense (:weapon this))))
-                                        (->/when (and equipper? (:armor this))
-                                                 (+ (:defense (:armor this)))))
+                                        (->/when (and equipper? (weapon this))
+                                                 (+ (:defense (weapon this))))
+                                        (->/when (and equipper? (armor this))
+                                                 (+ (:defense (armor this)))))
                         damage (->
                                  (- total-attack total-defense)
                                  (max 0)

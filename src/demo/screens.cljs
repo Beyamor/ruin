@@ -56,9 +56,10 @@
         (recur (<! key-events))))))
 
 (defn item-selection
-  ([items display key-events caption can-select-none]
+  [items display key-events caption
+   & {:keys [can-select-none? initial-selection]}]
   (let [state {:items items
-               :selection (-> items keys first)}
+               :selection (or initial-selection (-> items keys first))}
         render (fn [{:keys [items selection]}]
                  (render-item-collection items display caption #(= selection %)))]
     (render state)
@@ -71,7 +72,8 @@
           (close-command? event-type key-code)
           :cancel
 
-          (select-none-command? event-type key-code)
+          (and can-select-none?
+               (select-none-command? event-type key-code))
           (let [updated-state (assoc state :selection :none)]
             (render updated-state)
             (recur (<! key-events) updated-state))
@@ -90,8 +92,6 @@
 
           :else
           (recur (<! key-events) state))))))
-  ([items display key-events caption]
-   (item-selection items display key-events caption false)))
 
 (defn multiple-item-selection
   [items display key-events caption]

@@ -2,7 +2,8 @@
   (:use [ruin.util :only [remove-index]])
   (:require [ruin.level :as l]
             [clojure.set :as set])
-  (:refer-clojure :exclude [remove drop]))
+  (:refer-clojure :exclude [remove drop])
+  (:require-macros [lonocloud.synthread :as ->]))
 
 (defn full?
   [{:keys [inventory-size items]}]
@@ -32,7 +33,12 @@
 
 (defn remove
   [entity which]
-  [(update-in entity [:items] dissoc which)
+  [(-> entity
+     (update-in [:items] dissoc which)
+     (->/when (= (:weapon entity) which)
+              (assoc :weapon nil))
+     (->/when (= (:armor entity) which)
+              (assoc :armor nil)))
    (get-in entity [:items which])])
 
 (defn pick-up
