@@ -30,9 +30,6 @@
         [x y]
         (recur (random-x) (random-y))))))
 
-(def get-player
-  #(es/first-with (:entities %) :is-player?))
-
 (defn print-messages
   [display messages]
   (dotimes [i (count messages)]
@@ -40,9 +37,9 @@
 
 (defn render
   [{{display-width :width display-height :height :as display} :display
-    {:keys [entities visible-tiles] {level-width :width level-height :height :as level} :level :as scene} :scene
+    {:keys [entities visible-tiles player-id] {level-width :width level-height :height :as level} :level :as scene} :scene
     :as game}]
-  (let [player (get-player scene)
+  (let [player (es/get-by-id entities player-id)
         center-x (:x player)
         center-y (:y player)
         left (-> center-x (- (/ display-width 2)) (max 0) (min (- level-width display-width)))
@@ -180,6 +177,7 @@
               (-> game
                 (->/in [:scene]
                        (s/add player)
+                       (assoc :player-id (e/id player))
                        (update-seen-tiles player)
                        add-enemies
                        add-items)))}))
