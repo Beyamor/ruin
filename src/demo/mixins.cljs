@@ -87,6 +87,33 @@
      :send [this message]]
     (continue)))
 
+(defn handle-equipping
+  [this display key-events caption no-items-message equipment-type slot accessor]
+  (go (let [items (filter-map equipment-type (:items this))]
+        (if (empty? items)
+          (send-and-continue this no-items-message)
+          (let [initial-selection (or (slot this) :none)
+                response (<! (screens/item-selection
+                               items display key-events caption
+                               :can-select-none? true
+                               :initial-selection initial-selection))]
+            (cond
+              (= response :cancel)
+              (continue)
+
+              (= response :none)
+              (if (nil? (slot this))
+                (continue)
+                [:update (assoc this slot nil)
+                 :clear-messages this
+                 :send [this (str "Unequipped the " (i/describe (accessor this)) ".")]]) 
+
+              :else
+              (let [item (get (:items this) response)]
+                [:update (assoc this slot response)
+                 :clear-messages this
+                 :send [this (str "Equipped the " (i/describe item))]])))))))
+
 (defmixin
   :player-actor
   :group :actor
@@ -178,30 +205,16 @@
 
                        ; wielding crap
                        (and (not shift?) (= key-code js/ROT.VK_W))
-                       (let [wieldable-items (filter-map :wieldable? (:items this))]
-                         (if-not (empty? wieldable-items)
-                             (let [initial-selection (or (:weapon this) :none)
-                                   response (<! (screens/item-selection
-                                   wieldable-items display key-events "Choose the item you wish to wield"
-                                                  :can-select-none? true
-                                                  :initial-selection initial-selection))]
-                               (cond
-                                 (= response :cancel)
-                                 (continue)
-
-                                 (= response :none)
-                                 (if (nil? (:weapon this))
-                                   (continue)
-                                   [:update (assoc this :weapon nil)
-                                    :clear-messages this
-                                    :send [this (str "Unequipped the " (i/describe (weapon this)) ".")]]) 
-
-                                 :else
-                                 (let [weapon (get (:items this) response)]
-                                   [:update (assoc this :weapon response)
-                                    :clear-messages this
-                                    :send [this (str "Equipped the " (i/describe weapon))]])))
-                           (send-and-continue this "Nothing to wield")))
+                       (<! (handle-equipping this display key-events
+                                             "Choose the item you wish to wield"
+                                             "Nothing to wield."
+                                             :wieldable? :weapon weapon))
+                       ; wearing carp
+                       (and shift? (= key-code js/ROT.VK_W))
+                       (<! (handle-equipping this display key-events
+                                             "Choose the item you wish to wear"
+                                             "Nothing to wear."
+                                             :wearable? :armor armor))
 
                        :else
                        (recur (<! key-events)))

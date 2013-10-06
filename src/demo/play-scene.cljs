@@ -142,7 +142,7 @@
   [scene]
   (reduce
     (fn [scene _]
-      (let [item (-> [:sword] ;[:rock :apple]
+      (let [item (-> [:tunic] ;[:rock :apple]
                    rand-nth i/create)]
         (update-in scene [:level] l/add-item-at-random-pos item)))
     scene (range 100)))
