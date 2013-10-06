@@ -32,7 +32,7 @@
                    :foreground "darkviolet"}
            :properties {:max-hp 4
                         :attack 4}
-           :mixins [:wander-actor
+           :mixins [:task-actor
                     :attacker
                     :destructible
                     :corpse-dropper])
@@ -42,7 +42,7 @@
                    :foreground "orange"}
            :properties {:max-hp 3
                         :attack 2}
-           :mixins [:wander-actor
+           :mixins [:task-actor
                     :attacker
                     :destructible
                     :corpse-dropper])

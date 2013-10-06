@@ -318,15 +318,6 @@
           :sight-radius 5))
 
 (defmixin
-  :wander-actor
-  :group :actor
-  :act (fn [this {:keys [scene]}]
-         (let [[dx dy] (if (random/coin-flip)
-                         [(random/plus-minus) 0]
-                         [0 (random/plus-minus)])]
-           (try-move this scene dx dy))))
-
-(defmixin
   :inventory-holder
   :init (with-defaults
           :inventory-size 10
@@ -348,3 +339,25 @@
 
 (defmixin
   :equipper)
+
+(def task-definitions
+  {:wander
+   {:can-do? (constantly true)
+    :act (fn [this scene]
+           (let [[dx dy] (if (random/coin-flip)
+                           [(random/plus-minus) 0]
+                           [0 (random/plus-minus)])]
+             (try-move this scene dx dy)))}})
+
+(defmixin
+  :task-actor
+  :group :actor
+  :init (with-defaults
+          :tasks [:wander])
+  :act (fn [{:keys [tasks] :as this} {:keys [scene]}]
+         (loop [[task & more-tasks] tasks]
+           (when task
+             (let [{:keys [can-do? act]} (get task-definitions task)]
+               (if (can-do? this scene)
+                 (act this scene)
+                 (recur more-tasks)))))))
