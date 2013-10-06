@@ -31,7 +31,14 @@
 (defitem :apple
          :glyph {:char "@"
                  :foreground "red"}
-         :properties {:food-vaue 2
+         :properties {:food-vaue 15
+                      :max-consumptions 2}
+         :mixins [:edible])
+
+(defitem :pear
+         :glyph {:char "&"
+                 :foreground "limegreen"}
+         :properties {:food-vaue 20
                       :max-consumptions 2}
          :mixins [:edible])
 
@@ -42,7 +49,7 @@
 (defitem :corpse
          :glyph {:char "%"}
          :properties {:food-value 75
-                      :consumptions 1}
+                      :max-consumptions 1}
          :mixins [:edible]) 
 
 (defitem :dagger
