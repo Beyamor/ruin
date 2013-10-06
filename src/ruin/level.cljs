@@ -1,6 +1,6 @@
 (ns ruin.level
   (:use [ruin.base :only [null-tile]]
-        [ruin.util :only [remove-index]])
+        [ruin.util :only [remove-index apply-map]])
   (:require [ruin.array2d :as a2d]))
 
 (defn get-items
@@ -70,8 +70,8 @@
    :items {}})
 
 (defn fov
-  [level & {:keys [vision]
-            :or {vision :diamond}}]
+  [level {:keys [vision]
+          :or {vision :diamond}}]
   (let [topology (case vision
                    :diamond 4
                    :hexagon 6
@@ -82,9 +82,9 @@
       (js-obj "topology" topology))))
 
 (defn visible-tiles
-  [level x y sight-radius fov]
+  [level x y sight-radius & {:as fov-options}]
   (let [visibles (atom #{})]
-    (.compute fov
+    (.compute (fov level fov-options)
               x y sight-radius
               (fn [x y radius visibility]
                 (swap! visibles conj [x y])))

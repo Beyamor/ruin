@@ -61,10 +61,8 @@
 
 (defn update-visible-tiles
   [{:keys [level] :as scene} player]
-  (->>
-    (l/fov level)
-    (l/visible-tiles level (:x player) (:y player) (:sight-radius player))
-    (assoc scene :visible-tiles)))
+  (assoc scene :visible-tiles
+    (l/visible-tiles level (:x player) (:y player) (:sight-radius player))))
 
 (defn update-explored-tiles
   [{:keys [visible-tiles level] :as scene}]

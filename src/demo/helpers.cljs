@@ -20,3 +20,12 @@
      [:send [entity message]]
      (kill entity))]
      result)))
+
+(defn can-see?
+  [{:keys [x y sight-radius]} {target-x :x target-y :y :as target} level]
+  (when (>= (* sight-radius sight-radius)
+            (+ (* (- target-x x) (- target-x x))
+               (* (- target-y y) (- target-y y))))
+    (contains?
+      (l/visible-tiles level x y sight-radius)
+      [target-x target-y])))

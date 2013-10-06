@@ -1,11 +1,14 @@
 (ns ruin.util)
 
+(defn flatten-map
+  [m]
+  (->> m seq (apply concat)))
+
 (defn apply-map
-  [f m]
-  (->> m
-    seq
-    (apply concat)
-    (apply f)))
+  ([f m]
+   (apply f (flatten-map m)))
+  ([f m x]
+   (apply f x (flatten-map m))))
 
 (defn aremove
   [a v]
@@ -45,6 +48,11 @@
 (defn defaults
   [m & {:as defaults}]
   (merge defaults m))
+
+(defn with-defaults
+  [& {:as defaults}]
+  (fn [m]
+    (merge defaults m)))
 
 (defn filter-map
   [pred? m]

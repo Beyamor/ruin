@@ -1,7 +1,7 @@
 (ns demo.mixins
   (:use [cljs.core.async :only [<! timeout]]
         [ruin.mixin :only [defmixin has-mixin?]]
-        [ruin.util :only [assoc-if-missing defaults filter-map]]
+        [ruin.util :only [assoc-if-missing with-defaults defaults filter-map]]
         [demo.helpers :only [kill]])
   (:require [ruin.level :as l]
             [demo.tiles :as ts]
@@ -223,8 +223,8 @@
 (defmixin
   :fungus-actor
   :group :actor
-  :init #(-> %
-           (defaults :growths 5))
+  :init (with-defaults
+          :growths 5)
   :act (fn [{:keys [growths] :as this} {:keys [scene]}]
          (when (and (pos? growths)
                     (<= (rand) 0.02))
@@ -280,9 +280,8 @@
 (defmixin
   :attacker
   :group :attacker
-  :init #(-> %
-           (defaults
-             :attack 1))
+  :init (with-defaults
+          :attack 1)
   :try-attack (fn [this target]
                 (when (has-mixin? target :destructible)
                   (let [equipper? (has-mixin? this :equipper)
@@ -315,9 +314,8 @@
 (defmixin
   :sight
   :group :sight
-  :init #(-> % 
-           (defaults
-             :sight-radius 5)))
+  :init (with-defaults
+          :sight-radius 5))
 
 (defmixin
   :wander-actor
@@ -330,10 +328,9 @@
 
 (defmixin
   :inventory-holder
-  :init #(-> %
-           (defaults
-             :inventory-size 10
-             :items {})))
+  :init (with-defaults
+          :inventory-size 10
+          :items {}))
 
 (defmixin
   :eater
@@ -346,9 +343,8 @@
 
 (defmixin
   :corpse-dropper
-  :init #(-> %
-           (defaults
-             :corpse-drop-rate 100)))
+  :init (with-defaults
+          :corpse-drop-rate 100))
 
 (defmixin
   :equipper)
