@@ -45,3 +45,10 @@
 (defn defaults
   [m & {:as defaults}]
   (merge defaults m))
+
+(defn filter-map
+  [pred? m]
+  (select-keys m
+               (for [[k v] m
+                     :when (pred? v)]
+                 k)))

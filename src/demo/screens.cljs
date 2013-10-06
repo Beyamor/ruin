@@ -73,6 +73,11 @@
 
           (select-none-command? event-type key-code)
           (let [updated-state (assoc state :selection :none)]
+            (render updated-state)
+            (recur (<! key-events) updated-state))
+
+          (select-none-command? event-type key-code)
+          (let [updated-state (assoc state :selection :none)]
             (render state)
             (recur (<! key-events) updated-state))
 

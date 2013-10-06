@@ -18,7 +18,7 @@
                        js/window event
                        (fn [e]
                          (put! events
-                               [event-type (.-keyCode e)]))))]
+                               [event-type (.-keyCode e) (.-shiftKey e)]))))]
     (bind-event "keydown" :down)
     (bind-event "keyup" :up)
     (bind-event "keypress" :press)

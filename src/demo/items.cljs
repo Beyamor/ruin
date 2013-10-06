@@ -48,42 +48,42 @@
 (defitem :dagger
          :glyph {:char ")"
                  :foreground "gray"}
-         :attack 5
-         :wieldable? true
+         :properties {:attack 5
+                      :wieldable? true}
          :mixins [:equipable])
 
 (defitem :sword
          :glyph {:char ")"
                  :foreground "white"}
-         :attack 10
-         :wieldable? true
-         :mixins [:equpable])
+         :properties {:attack 10
+                      :wieldable? true}
+         :mixins [:equipable])
 
 (defitem :staff
          :glyph {:char ")"
                  :foreground "yellow"}
-         :attack 5
-         :defense 3
-         :wieldable? true
+         :properties {:attack 5
+                      :defense 3
+                      :wieldable? true}
          :mixins [:equipable])
 
 (defitem :tunic
-         :character "["
-         :foreground "green"
-         :defense 2
-         :wearable? true
+         :glyph {:char "["
+                 :foreground "green"}
+         :properties {:defense 2
+                      :wearable? true}
          :mixins [:equipable])
 
 (defitem :chainmail
-         :character "["
-         :foreground "white"
-         :defense 4
-         :wearable? true
+         :glyph {:char "["
+                 :foreground "white"}
+         :properties {:defense 4
+                      :wearable? true}
          :mixins [:equipable])
 
 (defitem :platemail
-         :character "["
-         :foreground "aliceblue"
-         :defense 6
-         :wearable? true
+         :glyph {:char "["
+                 :foreground "aliceblue"}
+         :properties {:defense 6
+                      :wearable? true}
          :mixins [:equipable])

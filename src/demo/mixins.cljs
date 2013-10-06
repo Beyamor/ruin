@@ -1,7 +1,7 @@
 (ns demo.mixins
   (:use [cljs.core.async :only [<! timeout]]
         [ruin.mixin :only [defmixin has-mixin?]]
-        [ruin.util :only [assoc-if-missing defaults]]
+        [ruin.util :only [assoc-if-missing defaults filter-map]]
         [demo.helpers :only [kill]])
   (:require [ruin.level :as l]
             [demo.tiles :as ts]
@@ -92,7 +92,7 @@
 
              ; otherwise, perform an action
              :else
-             (go (loop [[event-type key-code] (<! key-events)]
+             (go (loop [[event-type key-code shift?] (<! key-events)]
                    (if (= event-type :down)
                      (cond
                        ; movement
@@ -131,10 +131,12 @@
                            (send-and-continue this "There is nothing to pick up.")
 
                            (= 1 (count items-on-tile))
-                           (let [[this level succeeded?] (inv/pick-up this level 0)]
+                           (let [item (l/get-item level (:x this) (:y this) 0)
+                                 [this updated-level succeeded?] (inv/pick-up this level 0)]
                              (if succeeded?
                                [:update this
-                                :update-level level]
+                                :update-level updated-level
+                                :send [this (str "You picked up " (i/describe-a item) ".")]]
                                (send-and-continue this "Inventory is full.")))
 
                            :else
@@ -145,14 +147,15 @@
                                (continue)
                                (let [[this level got-all?] (inv/pick-up-multiple this level response)]
                                  (-> [:update this
-                                      :update-level level]
+                                      :update-level level
+                                      :send [this "You picked up the items."]]
                                    (->/when (not got-all?)
                                             (concat
                                               [:send [[this "Inventory is full. Not all items were picked up."]]]))))))))
 
                        ; eating things
                        (= key-code js/ROT.VK_E)
-                       (let [edible-items (hunger/edible-items (:items this))]
+                       (let [edible-items (filter-map :edible? (:items this))]
                          (if-not (empty? edible-items)
                            (let [response (<! (screens/item-selection
                                                 edible-items display key-events "Choose the item you wish to eat"))]
@@ -160,6 +163,31 @@
                                (continue)
                                (hunger/eat this response)))
                            (send-and-continue this "Nothing to eat.")))
+
+                       ; wielding crap
+                       (and (not shift?) (= key-code js/ROT.VK_W))
+                       (let [wieldable-items (filter-map :wieldable? (:items this))]
+                         (if-not (empty? wieldable-items)
+                             (let [response (<! (screens/item-selection
+                                   wieldable-items display key-events "Choose the item you wish to wield" true))]
+                               (cond
+                                 (= response :cancel)
+                                 (continue)
+
+                                 (= response :none)
+                                 (if (nil? (:weapon this))
+                                   (continue)
+                                   [:update (assoc this :weapon nil)
+                                    :send [this (str "Unequipped the " (i/describe (:weapon this)) ".")]]) 
+
+                                 ; TODO ughhhh i gotta give the weapons ids
+                                 ; cause right now there's going to be a bug
+                                 ; where if you drop an item, it'll still be equipped
+                                 :else
+                                 (let [weapon (get (:items this) response)]
+                                   [:update (assoc this :weapon (get (:items this) response))
+                                    :send [this (str "Equipped the " (i/describe weapon))]])))
+                           (send-and-continue this "Nothing to wield")))
 
                        :else
                        (recur (<! key-events)))

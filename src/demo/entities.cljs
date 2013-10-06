@@ -11,7 +11,8 @@
                     :message-recipient
                     :sight
                     :inventory-holder
-                    :eater]
+                    :eater
+                    :equipper]
            :properties {:attack 10
                         :sight-radius 8
                         :max-hp 10
