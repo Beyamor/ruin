@@ -41,3 +41,7 @@
       (if (= (first coll) v)
         true
         (recur (rest coll))))))
+
+(defn defaults
+  [m & {:as defaults}]
+  (merge defaults m))

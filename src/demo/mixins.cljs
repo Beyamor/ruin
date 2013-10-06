@@ -1,7 +1,7 @@
 (ns demo.mixins
   (:use [cljs.core.async :only [<! timeout]]
         [ruin.mixin :only [defmixin has-mixin?]]
-        [ruin.util :only [assoc-if-missing]]
+        [ruin.util :only [assoc-if-missing defaults]]
         [demo.helpers :only [kill]])
   (:require [ruin.level :as l]
             [demo.tiles :as ts]
@@ -113,12 +113,14 @@
                        (= key-code js/ROT.VK_D)
                        (if-not (empty? (:items this))
                          (do (g/refresh game)
-                           (if-let [what-to-drop (<! (screens/multiple-item-selection
-                                                       (:items this) display key-events "Choose the items you wish to drop"))]
-                             (let [[this level] (inv/drop-multiple this level what-to-drop)]
-                               [:update this
-                                :update-level level])
-                             (send-and-continue this "You dropped nothing.")))
+                           (let [response (<! (screens/multiple-item-selection
+                                                (:items this) display key-events "Choose the items you wish to drop"))]
+                             (if (or (= response :cancel)
+                                     (empty? response))
+                               (continue)
+                               (let [[this level] (inv/drop-multiple this level response)]
+                                 [:update this
+                                  :update-level level]))))
                          (send-and-continue this "You have nothing to drop."))
 
                        ; picking things up
@@ -136,24 +138,27 @@
                                (send-and-continue this "Inventory is full.")))
 
                            :else
-                           (if-let [what-to-pickup (<! (screens/multiple-item-selection
-                                                         items-on-tile display key-events "Choose the items you which to pick up"))]
-                             (let [[this level got-all?] (inv/pick-up-multiple this level what-to-pickup)]
-                               (-> [:update this
-                                    :update-level level]
-                                 (->/when (not got-all?)
-                                          (concat
-                                            [:send [[this "Inventory is full. Not all items were picked up."]]]))))
-                             (send-and-continue this "You picked up nothing."))))
+                           (let [response (<! (screens/multiple-item-selection
+                                                items-on-tile display key-events "Choose the items you which to pick up"))]
+                             (if (or (= :cancel response)
+                                     (empty? response))
+                               (continue)
+                               (let [[this level got-all?] (inv/pick-up-multiple this level response)]
+                                 (-> [:update this
+                                      :update-level level]
+                                   (->/when (not got-all?)
+                                            (concat
+                                              [:send [[this "Inventory is full. Not all items were picked up."]]]))))))))
 
                        ; eating things
                        (= key-code js/ROT.VK_E)
                        (let [edible-items (hunger/edible-items (:items this))]
                          (if-not (empty? edible-items)
-                           (if-let [what-to-eat (<! (screens/item-selection
-                                                      edible-items display key-events "Choose the item you wish to eat"))]
-                             (hunger/eat this what-to-eat)
-                             (continue))
+                           (let [response (<! (screens/item-selection
+                                                edible-items display key-events "Choose the item you wish to eat"))]
+                             (if (= response :cancel)
+                               (continue)
+                               (hunger/eat this response)))
                            (send-and-continue this "Nothing to eat.")))
 
                        :else
@@ -163,7 +168,8 @@
 (defmixin
   :fungus-actor
   :group :actor
-  :init #(assoc % :growths 5)
+  :init #(-> %
+           (defaults :growths 5))
   :act (fn [{:keys [growths] :as this} {:keys [scene]}]
          (when (and (pos? growths)
                     (<= (rand) 0.02))
@@ -179,10 +185,10 @@
                         [:send [entity "The fungus is spreading!"]])))))))
 
 (def init-health #(-> %
-                    (assoc-if-missing :max-hp 10)
-                    (->/as with-max-hp
-                           (assoc-if-missing :hp (:max-hp with-max-hp)))
-                    (assoc-if-missing :defense 0)))
+                    (defaults :max-hp 10
+                              :defense 0)
+                    (->/as e
+                           (assoc-if-missing :hp (:max-hp e)))))
 
 (defn try-drop-corpse
   [{:keys [x y corpse-drop-rate] :as entity}]
@@ -220,11 +226,24 @@
   :attacker
   :group :attacker
   :init #(-> %
-           (assoc-if-missing :attack 1))
+           (defaults
+             :attack 1))
   :try-attack (fn [this target]
                 (when (has-mixin? target :destructible)
-                  (let [damage (->
-                                 (- (:attack this) (:defense target))
+                  (let [equipper? (has-mixin? this :equipper)
+                        total-attack (-> (:attack this)
+                                       (->/when (and equipper? (:weapon this))
+                                                (+ (:attack (:weapon this))))
+                                       (->/when (and equipper? (:armor this))
+                                                (+ (:attack (:armor this)))))
+                        equpper? (has-mixin? target :equipper)
+                        total-defense (-> (:defense this)
+                                        (->/when (and equipper? (:weapon this))
+                                                 (+ (:defense (:weapon this))))
+                                        (->/when (and equipper? (:armor this))
+                                                 (+ (:defense (:armor this)))))
+                        damage (->
+                                 (- total-attack total-defense)
                                  (max 0)
                                  rand-int
                                  inc)]
@@ -241,7 +260,9 @@
 (defmixin
   :sight
   :group :sight
-  :init #(-> % (assoc-if-missing :sight-radius 5)))
+  :init #(-> % 
+           (defaults
+             :sight-radius 5)))
 
 (defmixin
   :wander-actor
@@ -255,18 +276,24 @@
 (defmixin
   :inventory-holder
   :init #(-> %
-           (assoc-if-missing :inventory-size 10)
-           (assoc-if-missing :items {})))
+           (defaults
+             :inventory-size 10
+             :items {})))
 
 (defmixin
   :eater
   :init #(-> %
-           (assoc-if-missing :max-fullness 100)
+           (defaults
+             :max-fullness 100
+             :hunger 1)
            (->/as e
-                  (assoc-if-missing :fullness (/ (:max-fullness e) 2)))
-           (assoc-if-missing :hunger 1)))
+                  (assoc-if-missing :fullness (/ (:max-fullness e) 2)))))
 
 (defmixin
   :corpse-dropper
   :init #(-> %
-           (->> (merge {:corpse-drop-rate 100}))))
+           (defaults
+             :corpse-drop-rate 100)))
+
+(defmixin
+  :equipper)

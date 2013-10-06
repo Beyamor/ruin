@@ -16,6 +16,11 @@
   (and (= event-type :down)
        (= key-code js/ROT.VK_RETURN)))
 
+(defn select-none-command?
+  [event-type key-code]
+  (and (= event-type :down)
+       (= key-code js/ROT.VK_0)))
+
 (defn select-command?
   [event-type key-code]
   (and (= event-type :down)
@@ -51,7 +56,7 @@
         (recur (<! key-events))))))
 
 (defn item-selection
-  [items display key-events caption]
+  ([items display key-events caption can-select-none]
   (let [state {:items items
                :selection (-> items keys first)}
         render (fn [{:keys [items selection]}]
@@ -64,7 +69,12 @@
           (:selection state)
 
           (close-command? event-type key-code)
-          nil
+          :cancel
+
+          (select-none-command? event-type key-code)
+          (let [updated-state (assoc state :selection :none)]
+            (render state)
+            (recur (<! key-events) updated-state))
 
           (and (select-command? event-type key-code)
                (contains? (:items state) (key->selection key-code)))
@@ -75,6 +85,8 @@
 
           :else
           (recur (<! key-events) state))))))
+  ([items display key-events caption]
+   (item-selection items display key-events caption false)))
 
 (defn multiple-item-selection
   [items display key-events caption]
@@ -89,10 +101,10 @@
           (confirm-command? event-type key-code)
           (if-not (empty? (:selections state))
             (:selections state)
-            nil)
+            :cancel)
 
           (close-command? event-type key-code)
-          nil
+          :cancel
 
           (and (select-command? event-type key-code)
                (contains? (:items state) (key->selection key-code)))

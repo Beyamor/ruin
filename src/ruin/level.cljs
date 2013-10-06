@@ -25,7 +25,7 @@
   (let [indexes (set indexes)
         items (get-items level x y)
         [keep remove] (loop [i 0 keep [] remove []]
-                        (if (< i (count indexes))
+                        (if (< i (count items))
                           (let [item (nth items i)
                                 [keep remove] (if (contains? indexes i)
                                                 [keep (conj remove item)]
