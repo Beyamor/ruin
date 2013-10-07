@@ -102,12 +102,12 @@
           (let [[entity experience] gain
                 [entity levelled?] (-> (es/get-by-id entities (e/id entity))
                                      (levelling/give-experience experience))
-                updated-scene (update-in scene [:entities] es/update! entity)]
+                updated-scene (update-in scene [:entities] es/update entity)]
             (if-not (and levelled? (has-mixin? entity :stat-gainer))
               (recur scene more-gains)
               (let [updated-entity (e/call entity :on-level-gain game)
                     updated-entity (if (map? updated-entity) updated-entity (<! updated-entity))
-                    updated-scene (update-in updated-scene [:entities] es/update! updated-entity)]
+                    updated-scene (update-in updated-scene [:entities] es/update updated-entity)]
                 (recur updated-scene more-gains))))))))
 
 (defn go-play

@@ -35,7 +35,7 @@
   (-> scene
     (->/when entity
              (->/in [:entities]
-                    (es/add! entity))
+                    (es/add entity))
              (->/when on-add
                       (on-add entity)))))
 
@@ -46,7 +46,7 @@
              (->/when on-remove
                       (on-remove entity))
              (->/in [:entities]
-                    (es/remove! entity)))))
+                    (es/remove entity)))))
 
 (defn create*
   [scene]
@@ -87,8 +87,7 @@
 
 (defn- update-entity
   [scene updated-entity]
-  (es/update! (:entities scene) updated-entity)
-  scene)
+  (update-in scene [:entities] es/update updated-entity))
 
 (defn update
   [scene instructions]

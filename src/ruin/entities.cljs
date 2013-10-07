@@ -1,24 +1,16 @@
 (ns ruin.entities
   (:use [clojure.set :only [union]])
-  (:require [ruin.entity :as e]))
-
-(defn index-of
-  [entities entity]
-  (get @(.-indices entities) (e/id entity)))
+  (:require [ruin.entity :as e])
+  (:refer-clojure :exclude [remove]))
 
 (defn get-by-id
-  [entities id]
-  (when (nil? entities) (throw (js/Error. "wut")))
-  (->>
-    (get @(.-indices entities) id)
-    (aget (.-list entities))))
+  [{:keys [id-map]} id]
+  (get id-map id))
 
 (defn create
   []
-  (js-obj
-    "list" (array)
-    "indices" (atom {})
-    "positions" (atom {})))
+  {:id-map {}
+   :position-map {}})
 
 (defn add-to-positions
   [positions entity]
@@ -42,66 +34,33 @@
       (add-to-positions new-entity))
     positions))
 
-(defn add!
+(defn add
   [entities entity]
-  (when entity
-    (let [list (.-list entities)
-          indices (.-indices entities)
-          positions (.-positions entities)]
-      (swap! indices assoc (e/id entity) (alength list))
-      (swap! positions add-to-positions entity)
-      (.push list entity)))
-  entities)
+  (-> entities
+    (update-in [:position-map] add-to-positions entity)
+    (assoc-in [:id-map (e/id entity)] entity)))
 
-(defn remove!
+(defn remove
   [entities entity]
-  (when entity
-    (let [list (.-list entities)
-          indices (.-indices entities)
-          positions (.-positions entities)]
-      (when-let [index (index-of entities entity)]
-        (.splice list index 1)
-        (swap! indices dissoc (e/id entity))
-        (swap! positions remove-from-positions entity)
-        (loop [index index]
-          (when (< index (alength list))
-            (let [id (e/id (aget list index))]
-              (swap! indices assoc id index)
-              (recur (inc index))))))))
-  entities)
+  (-> entities
+    (update-in [:position-map] remove-from-positions entity)
+    (update-in [:id-map] dissoc (e/id entity))))
 
-(defn update!
+(defn update
   [entities entity]
-  (when entity
-    (when-let [index (index-of entities entity)]
-      (let [entity-list (.-list entities)
-            old-entity (aget entity-list index)]
-        (swap! (.-positions entities) update-position old-entity entity)
-        (aset entity-list index entity))))
-  entities)
-
-(defn first-match
-  [entities pred?]
-  (let [entity-list (.-list entities)]
-    (loop [i 0]
-      (when (< i (alength entity-list))
-        (let [entity (aget entity-list i)]
-          (if (pred? entity)
-            entity
-            (recur (inc i))))))))
-
-(defn first-with
-  [entities property]
-  (first-match entities #(contains? % property)))
+  (let [old-entity (get-by-id entities (e/id entity))]
+    (-> entities
+      (update-in [:position-map] update-position old-entity entity)
+      (assoc-in [:id-map (e/id entity)] entity))))
 
 (defn at-position
-  [entities x y]
-  (when-let [ids (get-in @(.-positions entities) [x y])]
-    (map #(get-by-id entities %) ids)))
+  [{:keys [position-map id-map]} x y]
+  (when-let [ids (get-in position-map [x y])]
+    (map id-map ids)))
 
 (defn at-position?
-  [entities x y]
-  (not (empty? (get-in @(.-positions entities) [x y]))))
+  [{:keys [position-map]} x y]
+  (not (empty? (get-in position-map [x y]))))
 
 (defn first-at-position
   [entities x y]
