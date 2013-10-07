@@ -38,7 +38,9 @@
            :mixins [:task-actor
                     :attacker
                     :destructible
-                    :corpse-dropper])
+                    :corpse-dropper
+                    :experience-gainer
+                    :random-stat-gainer])
 
 (defentity :newt
            :glyph {:char "N"
@@ -48,7 +50,9 @@
            :mixins [:task-actor
                     :attacker
                     :destructible
-                    :corpse-dropper])
+                    :corpse-dropper
+                    :experience-gainer
+                    :random-stat-gainer])
 
 (defentity :kobold
            :glyph {:char "K"
@@ -61,4 +65,6 @@
                     :sight
                     :attacker
                     :destructible
-                    :corpse-dropper])
+                    :corpse-dropper
+                    :experience-gainer
+                    :random-stat-gainer])
