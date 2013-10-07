@@ -1,5 +1,7 @@
 (ns ruin.scene
-  (:use [ruin.mixin :only [has-mixin?]])
+  (:use [ruin.mixin :only [has-mixin?]]
+        [ruin.base :only [deftemplate get-template]]
+        [ruin.util :only [apply-map]])
   (:require [ruin.display :as d]
             [ruin.entity :as e]
             [ruin.level :as l]
@@ -8,6 +10,9 @@
                    [ruin.entities.macros :as es+])
   (:refer-clojure :exclude [remove]))
 
+(defn defscene
+  [name properties]
+  (apply-map deftemplate :scene name properties))
 
 (defn enter
   [{:keys [enter]
@@ -58,10 +63,8 @@
 (def scene-definitions (atom {}))
 
 (defn create
-  [scene & args]
-  (if-let [constructor (get @scene-definitions scene)]
-    (create* (apply constructor args))
-    (throw (js/Error (str "Undefined scene: " scene)))))
+  [scene]
+  (create* (get-template :scene scene)))
 
 (defn send-message
   [scene target message]

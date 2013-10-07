@@ -1,6 +1,7 @@
 (ns demo.play-scene
   (:use [cljs.core.async :only [chan put! <!]]
         [ruin.util :only [aremove contains-val?]]
+        [ruin.scene :only [defscene]]
         [ruin.mixin :only [has-mixin?]])
   (:require [ruin.game :as g]
             [ruin.display :as d]
@@ -16,8 +17,7 @@
             [demo.levelling :as levelling]
             [ruin.generate :as generate])
   (:use-macros [ruin.util.macros :only [aside]]
-               [cljs.core.async.macros :only [go]]
-               [ruin.scene.macros :only [defscene]])
+               [cljs.core.async.macros :only [go]])
   (:require-macros [lonocloud.synthread :as ->]
                    [ruin.entities.macros :as es+]))
 
@@ -177,39 +177,43 @@
         (update-in scene [:level] l/add-item-at-random-pos item)))
     scene (range 100)))
 
+(defn create-level
+  [width height]
+  (l/create width height
+            (generate/cellular
+              :width width
+              :height height
+              :iterations 3
+              :val->tile {1 ts/floor-tile
+                          0 ts/wall-tile})))
 (defscene
-  play
-  (let [width 100
-        height 48
-        level (l/create width height
-                        (generate/cellular
-                          :width width
-                          :height height
-                          :iterations 3
-                          :val->tile {1 ts/floor-tile
-                                      0 ts/wall-tile}))
-        [player-x player-y] (random-floor-position level)
-        player (-> (e/create :player)
-                 (e/set-pos player-x player-y))
-        scheduler (js/ROT.Scheduler.Simple.)]
-    {:render render
-     :go go-play
-     :level level
-     :visible-tiles #{}
-     :scheduler scheduler
-     :on-add (fn [{:keys [scheduler] :as scene} entity]
-               (when (has-mixin? entity :actor)
-                 (.add scheduler (e/id entity) true))
-               scene)
-     :on-remove (fn [{:keys [scheduler] :as scene} entity]
-                  (when (has-mixin? entity :actor)
-                    (.remove scheduler (e/id entity)))
-                  scene)
-     :enter (fn [game]
+  :play
+  {:render render
+   :go go-play
+   :visible-tiles #{}
+
+   :on-add (fn [{:keys [scheduler] :as scene} entity]
+             (when (has-mixin? entity :actor)
+               (.add scheduler (e/id entity) true))
+             scene)
+
+   :on-remove (fn [{:keys [scheduler] :as scene} entity]
+                (when (has-mixin? entity :actor)
+                  (.remove scheduler (e/id entity)))
+                scene)
+
+   :enter (fn [game]
+            (let [level (create-level 100 48)
+                  [player-x player-y] (random-floor-position level)
+                  player (-> (e/create :player)
+                           (e/set-pos player-x player-y))
+                  scheduler (js/ROT.Scheduler.Simple.)]
               (-> game
                 (->/in [:scene]
+                       (assoc :scheduler scheduler)
+                       (assoc :level level)
                        (s/add player)
                        (assoc :player-id (e/id player))
                        (update-seen-tiles player)
                        add-enemies
-                       add-items)))}))
+                       add-items))))})

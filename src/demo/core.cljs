@@ -1,6 +1,7 @@
 (ns demo.core
   (:use [demo.play-scene :only [play-scene]]
-        [cljs.core.async :only [<! chan]])
+        [cljs.core.async :only [<! chan]]
+        [ruin.scene :only [defscene]])
   (:require [ruin.display :as d]
             [ruin.game :as g]
             [ruin.core :as ruin]
@@ -8,12 +9,11 @@
             [demo.entities :as es]
             [demo.tiles :as tiles]
             [ruin.generate :as generate])
-  (:use-macros [cljs.core.async.macros :only [go]]
-               [ruin.scene.macros :only [defscene]])
+  (:use-macros [cljs.core.async.macros :only [go]])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (defscene
-  start
+  :start
   {:render
    (fn [{:keys [display]}]
      (doto display
@@ -30,7 +30,7 @@
              (recur (<! key-events))))))})
 
 (defscene
-  game-over
+  :game-over
   {:render
    (fn [{:keys [display]}]
      (doto display

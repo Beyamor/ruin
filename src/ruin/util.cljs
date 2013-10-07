@@ -7,8 +7,10 @@
 (defn apply-map
   ([f m]
    (apply f (flatten-map m)))
-  ([f m x]
-   (apply f x (flatten-map m))))
+  ([f x m]
+   (apply f x (flatten-map m)))
+  ([f x y m]
+   (apply f x y (flatten-map m))))
 
 (defn aremove
   [a v]
