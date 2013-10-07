@@ -13,6 +13,7 @@
             [demo.hunger :as hunger]
             [ruin.level :as l]
             [ruin.item :as i]
+            [demo.levelling :as levelling]
             [ruin.generate :as generate])
   (:use-macros [ruin.util.macros :only [aside]]
                [cljs.core.async.macros :only [go]]
@@ -85,6 +86,23 @@
           (g/change-scene game :game-over)
           (recur (<! key-events))))))
 
+(defn apply-experience-gains
+  [scene experience-gains game]
+  (go (loop [{:keys [entities] :as scene} scene
+             [gain & more-gains] experience-gains]
+        (if-not gain
+          scene
+          (let [[entity experience] gain
+                [entity levelled?] (-> (es/get-by-id entities (e/id entity))
+                                     (levelling/give-experience experience))
+                updated-scene (update-in scene [:entities] es/update! entity)]
+            (if-not (and levelled? (has-mixin? entity :stat-gainer))
+              (recur scene more-gains)
+              (let [updated-entity (e/call entity :on-level-gain game)
+                    updated-entity (if (map? updated-entity) updated-entity (<! updated-entity))
+                    updated-scene (update-in updated-scene [:entities] es/update! updated-entity)]
+                (recur updated-scene more-gains))))))))
+
 (defn go-play
   [{:keys [key-events display]
     {:keys [scheduler]} :scene
@@ -99,10 +117,17 @@
             (let [update (-> (e/call actor :act game)
                            (->/as update
                                   (->/when (and update (not (coll? update))) <!)))
+                  experience-gains (->> update
+                                     (partition 2)
+                                     (filter #(= :give-experience (first %)))
+                                     (map second))
                   updated-scene (-> scene
                                   (s/update update)
                                   (->/when is-player?
-                                           (update-seen-tiles actor)))
+                                           (update-seen-tiles actor))
+                                  (->/when (not (empty? experience-gains))
+                                           (apply-experience-gains experience-gains game)
+                                           <!))
                   updated-game (assoc game :scene updated-scene)]
               (cond
                 (contains-val? update :player-killed?)

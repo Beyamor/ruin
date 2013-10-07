@@ -257,12 +257,21 @@
   (let [new-hp (- (:hp this) damage)]
     (if (> new-hp 0)
       [:update (assoc this :hp new-hp)]
-      (concat
-        [:update (assoc this :hp 0)
-         :send [attacker (str "You kill the " (:name this) ".")]]
-        (when (has-mixin? this :corpse-dropper)
-          (try-drop-corpse this))
-        (kill this)))))
+      (let [exp (-> 0
+                  (+ (:max-hp this) (:defense this))
+                  (->/when (has-mixin? this :attacker)
+                           (+ (:attack this)))
+                  (->/when (and (has-mixin? this :experience-gainer)
+                                (has-mixin? attacker :experience-gainer))
+                           (- (* (- (:level attacker) (:level this)) 3)))
+                  (max 0))]
+        (concat
+          [:update (assoc this :hp 0)
+           :send [attacker (str "You kill the " (:name this) ".")]
+           :give-experience [attacker exp]]
+          (when (has-mixin? this :corpse-dropper)
+            (try-drop-corpse this))
+          (kill this))))))
 
 (defmixin
   :destructible
@@ -387,3 +396,50 @@
                (if (can-do? this scene)
                  (act this scene)
                  (recur more-tasks)))))))
+
+(defn increase-stat
+  [entity stat amount]
+  (update-in entity [stat] + amount))
+
+(defmixin
+  :experience-gainer
+  :init #(let [stat-options (concat
+                              (when (has-mixin? % :attacker)
+                                [["Increase attack" :attack 2]])
+                              (when (has-mixin? % :destructible)
+                                [["Increase defense" :defense 2]
+                                 ["Increase max health" :max-hp 10]])
+                              (when (has-mixin? % :sight)
+                                [["Increase sight range" :sight 1]]))]
+           (-> %
+             (defaults :level 1
+                       :experience 0
+                       :stat-points-per-level 1
+                       :stat-points 0
+                       :stat-options stat-options))))
+
+(defmixin
+  :random-stat-gainer
+  :group :stat-gainer
+  :on-level-gain (fn [{:keys [stat-options] :as this} _]
+                   (loop [this this]
+                     (if (<= (:stat-points this) 0)
+                       this
+                       (let [[_ stat amount] (rand-nth stat-options)]
+                         (recur (-> this
+                                  (update-in [:stat-points] dec)
+                                  (increase-stat stat amount))))))))
+
+(defmixin
+  :player-stat-gainer
+  :group :stat-gainer
+  :on-level-gain (fn [{:keys [stat-options stat-points] :as this}
+                      {:keys [display key-events] :as game}]
+                   (go (let [decisions (<! (screens/stat-gain-selection
+                                             (zipmap (range) (map first stat-options))
+                                             stat-points display key-events))]
+                         (reduce
+                           (fn [this decision]
+                             (let [[_ stat amount] (nth stat-options decision)]
+                               (increase-stat this stat amount)))
+                           (assoc this :stat-points 0) decisions)))))

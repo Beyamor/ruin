@@ -8,6 +8,7 @@
 
 (defn get-by-id
   [entities id]
+  (when (nil? entities) (throw (js/Error. "wut")))
   (->>
     (get @(.-indices entities) id)
     (aget (.-list entities))))

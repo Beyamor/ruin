@@ -60,3 +60,7 @@
                (for [[k v] m
                      :when (pred? v)]
                  k)))
+
+(defn seq->map
+  [coll]
+  (->> coll (partition 2) hash-map))

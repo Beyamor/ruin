@@ -12,12 +12,15 @@
                     :sight
                     :inventory-holder
                     :eater
-                    :equipper]
+                    :equipper
+                    :experience-gainer
+                    :player-stat-gainer]
            :properties {:attack 10
                         :sight-radius 8
-                        :max-hp 10
+                        :max-hp 100
                         :inventory-size 3
-                        :max-fullness 500})
+                        :max-fullness 500
+                        :stat-points-per-level 2})
 
 (defentity :fungus
            :name "fungus"

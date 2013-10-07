@@ -122,3 +122,53 @@
 
           :else
           (recur (<! key-events) state))))))
+
+(defn render-stat-selection
+  [options {:keys [points-remaining]} display]
+  (doto display
+    d/clear!
+    (d/draw-text! 0 0 "Choose a stat to increase"))
+  (dotimes [i (count options)]
+    (->>
+      (str (int->letter i) " - " (get options i))
+      (d/draw-text! display 0 (+ i 2))))
+  (->>
+    (str "Remaining points: " points-remaining)
+    (d/draw-text! display 0 (+ 4 (count options)))))
+
+(defn render-item-collection
+  [items display caption selected?]
+  (doto display
+    d/clear!
+    (d/draw-text! 0 0 caption))
+  (dotimes [i (count items)]
+    (let [index (-> items keys (nth i))
+          item (get items index)]
+      (->>
+        [(int->letter index)
+         (if (selected? index) "+" "-")
+         (i/describe item)]
+        (interpose " ")
+        (apply str)
+        (d/draw-text! display 0 (+ 2 i))))))
+
+(defn stat-gain-selection
+  [options number-of-points display key-events]
+  (let [state {:points-remaining number-of-points
+               :decisions []}
+        render #(render-stat-selection options % display)]
+    (render state)
+    (go (loop [[event-type key-code] (<! key-events) state state]
+          (if (zero? (:points-remaining state))
+            (:decisions state)
+            (cond
+              (and (select-command? event-type key-code)
+                   (contains? options (key->selection key-code)))
+              (let [updated-state (-> state
+                                    (update-in [:points-remaining] dec)
+                                    (update-in [:decisions] conj (key->selection key-code)))]
+                (render updated-state)
+                (recur (<! key-events) updated-state))
+
+              :else
+              (recur (<! key-events) state)))))))
