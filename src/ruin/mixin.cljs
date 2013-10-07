@@ -1,5 +1,5 @@
 (ns ruin.mixin
-  (:use [ruin.base :only [deftemplate get-template]]))
+  (:use [ruin.core :only [deftemplate get-template]]))
 
 (def defmixin (partial deftemplate :mixin))
 

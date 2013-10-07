@@ -1,8 +1,8 @@
 (ns ruin.entity
   (:use [ruin.util :only [apply-map dissoc-all]]
-        [ruin.base :only [deftemplate get-template init-mixins add-mixin-properties]])
+        [ruin.core :only [deftemplate get-template init-mixins add-mixin-properties]])
   (:require [ruin.mixin :as mixin]
-            [ruin.base :as base])
+            [ruin.core :as core])
   (:require-macros [lonocloud.synthread :as ->]))
 
 (def defentity (partial deftemplate :entity))
@@ -25,7 +25,7 @@
               :x 0
               :y 0
               :name name
-              :glyph (apply-map base/glyph glyph)
+              :glyph (apply-map core/glyph glyph)
               :mixins (set
                         (for [mixin mixins]
                           (keyword (:name mixin))))

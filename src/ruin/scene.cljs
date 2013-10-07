@@ -1,6 +1,6 @@
 (ns ruin.scene
   (:use [ruin.mixin :only [has-mixin?]]
-        [ruin.base :only [deftemplate get-template]]
+        [ruin.core :only [deftemplate get-template]]
         [ruin.util :only [apply-map]])
   (:require [ruin.display :as d]
             [ruin.entity :as e]

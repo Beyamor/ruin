@@ -1,5 +1,5 @@
 (ns ruin.level
-  (:use [ruin.base :only [null-tile]]
+  (:use [ruin.core :only [null-tile]]
         [ruin.util :only [remove-index apply-map]])
   (:require [ruin.array2d :as a2d]))
 

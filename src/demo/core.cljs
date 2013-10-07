@@ -4,7 +4,6 @@
         [ruin.scene :only [defscene]])
   (:require [ruin.display :as d]
             [ruin.game :as g]
-            [ruin.core :as ruin]
             [ruin.scene :as s]
             [demo.entities :as es]
             [demo.tiles :as tiles]
@@ -39,7 +38,7 @@
    :go
    (fn [_] (chan))})
 
-(ruin/run
+(g/run
   :width 80
   :height 24
   :first-scene :start)

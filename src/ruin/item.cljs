@@ -1,7 +1,7 @@
 (ns ruin.item
   (:use [ruin.util :only [apply-map]]
-        [ruin.base :only [deftemplate get-template init-mixins add-mixin-properties]])
-  (:require [ruin.base :as base]
+        [ruin.core :only [deftemplate get-template init-mixins add-mixin-properties]])
+  (:require [ruin.core :as core]
             [ruin.mixin :as mixin]))
 
 (def defitem (partial deftemplate :item))
@@ -13,7 +13,7 @@
         mixins (map mixin/realize mixins)]
     (->
       {:name name
-       :glyph (apply-map base/glyph glyph)
+       :glyph (apply-map core/glyph glyph)
        :mixins (set
                  (for [mixin mixins]
                    (keyword (:name mixin))))

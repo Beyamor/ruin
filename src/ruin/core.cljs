@@ -1,50 +1,57 @@
 (ns ruin.core
-  (:use [cljs.core.async :only [chan sliding-buffer put!]]
-        [ruin.util :only [apply-map]])
-  (:require [ruin.game :as g]
-            [ruin.scene :as s])
-  (:require-macros [lonocloud.synthread :as ->]
-                   [cljs.core.async.macros :refer [go]]))
+  (:use [ruin.util :only [apply-map]])
+  (:require-macros [lonocloud.synthread :as ->]))
 
-(set! *print-fn*
-      (fn [& args]
-        (->> args (map str) (interpose " ") (apply str) (.log js/console))))
+(def templates (atom {}))
 
-(defn watch-key-events
-  []
-  (let [events (chan (sliding-buffer 2))
-        bind-event (fn [event event-type]
-                     (.addEventListener
-                       js/window event
-                       (fn [e]
-                         (put! events
-                               [event-type (.-keyCode e) (.-shiftKey e)]))))]
-    (bind-event "keydown" :down)
-    (bind-event "keyup" :up)
-    (bind-event "keypress" :press)
-    events))
+(defn deftemplate
+  [category title & {:as properties}]
+  (swap! templates assoc-in [category (keyword title)]
+         (merge {:name (name title)}
+                properties))) 
 
+(defn get-template 
+  [category title]
+  (if-let [template (get-in @templates [category title])]
+    template
+    (throw (js/Error. (str "Unrecognized template: " category " - " title)))))
 
-(defn- on-window-load
-  [f]
-  (set! (.-onload js/window) f))
+(defn add-mixin-properties
+  [e mixins]
+  (reduce
+    (fn [e mixin]
+      (reduce
+        (fn [e [property value]]
+          (-> e
+            (->/when (not (or (#{:name :init} property)
+                              (contains? e property)))
+                     (assoc property value))))
+        e mixin))
+    e mixins))
 
-(defn- handle-input
-  [{:keys [scene] :as game} event]
-  (if scene
-    (s/handle-input scene game event)
-    game))
+(defn init-mixins
+  [e mixins]
+  (reduce
+    (fn [e {:keys [init]}]
+      (-> e
+        (->/when init
+                 (init e))))
+    e mixins))
 
-(defn run
-  [& {:keys [width height first-scene]}]
-  (on-window-load
-    #(cond
-       (not (.isSupported js/ROT))
-       (js/alert "The rot.js library isn't supported by your browser.")
+(defn glyph
+  [& {:keys [char foreground background]
+      :or {char " " :foreground "white" :background "black"}}]
+  {:char char
+   :foreground foreground
+   :background background})
 
-       :else
-       (let [key-events (watch-key-events)
-             game (g/create width height key-events)]
-         (.appendChild (.-body js/document) (-> game :container))
-         (go (loop [game (g/change-scene game first-scene)]
-               (recur (<! (s/go (:scene game) game)))))))))
+(defn tile
+  [& {:keys [walkable? diggable? blocks-light?]
+      :or {walkable? false diggable? false}
+      :as properties}]
+  {:glyph (apply-map glyph properties)
+   :walkable? walkable?
+   :diggable? diggable?
+   :blocks-light? blocks-light?})
+
+(def null-tile (tile (glyph :char ".")))
