@@ -127,7 +127,7 @@
   (reduce
     (fn [scene _]
       (let [[x y] (random-free-position scene)]
-        (let [entity (rand-nth [:fungus :bat :newt])]
+        (let [entity (rand-nth [:kobold])] ;[:fungus :bat :newt])]
           (s/add scene
                  (-> (e/create entity)
                    (e/set-pos x y))))))

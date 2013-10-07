@@ -17,7 +17,7 @@
                         :sight-radius 8
                         :max-hp 10
                         :inventory-size 3
-                        :max-fullness 100})
+                        :max-fullness 500})
 
 (defentity :fungus
            :name "fungus"
@@ -43,6 +43,19 @@
            :properties {:max-hp 3
                         :attack 2}
            :mixins [:task-actor
+                    :attacker
+                    :destructible
+                    :corpse-dropper])
+
+(defentity :kobold
+           :glyph {:char "K"
+                   :foreground "skyblue"}
+           :properties {:max-hp 6
+                        :attack 4
+                        :sight-radius 5
+                        :tasks [:hunt :wander]}
+           :mixins [:task-actor
+                    :sight
                     :attacker
                     :destructible
                     :corpse-dropper])

@@ -2,7 +2,7 @@
   (:use [cljs.core.async :only [<! timeout]]
         [ruin.mixin :only [defmixin has-mixin?]]
         [ruin.util :only [assoc-if-missing with-defaults defaults filter-map]]
-        [demo.helpers :only [kill]])
+        [demo.helpers :only [kill can-see?]])
   (:require [ruin.level :as l]
             [demo.tiles :as ts]
             [ruin.game :as g]
@@ -340,6 +340,15 @@
 (defmixin
   :equipper)
 
+(defn step-towards
+  [{from-x :x from-y :y :as this} {to-x :x to-y :y :as target} {:keys [entities level]}]
+  (l/path-step level from-x from-y to-x to-y
+               (fn [x y]
+                 (when (:walkable? (l/get-tile level x y))
+                   (->> (es/at-position entities x y)
+                     (remove #{this target})
+                     empty?)))))
+
 (def task-definitions
   {:wander
    {:can-do? (constantly true)
@@ -347,7 +356,24 @@
            (let [[dx dy] (if (random/coin-flip)
                            [(random/plus-minus) 0]
                            [0 (random/plus-minus)])]
-             (try-move this scene dx dy)))}})
+             (try-move this scene dx dy)))}
+
+   :hunt
+   {:can-do? (fn [this {:keys [player-id level entities]}]
+               (let [player (es/get-by-id entities player-id)]
+                 (can-see? this player level)))
+    :act (fn [this {:keys [player-id entities] :as scene}]
+           (let [player (es/get-by-id entities player-id)
+                 dx (- (:x this) (:x player))
+                 dy (- (:y this) (:y player))
+                 offset (+ (Math/abs dx) (Math/abs dy))
+                 attacker? (has-mixin? this :attacker)]
+             (if (and attacker? (= 1 offset))
+               (e/call this :try-attack player)
+               (let [[step-x step-y] (step-towards this player scene)
+                     dx (- step-x (:x this))
+                     dy (- step-y (:y this))]
+                 (try-move this scene dx dy)))))}})
 
 (defmixin
   :task-actor

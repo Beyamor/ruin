@@ -89,3 +89,15 @@
               (fn [x y radius visibility]
                 (swap! visibles conj [x y])))
     @visibles))
+
+(defn path-step
+  [level from-x from-y to-x to-y can-walk?]
+  (let [path (js/ROT.Path.AStar. to-x to-y can-walk?)
+        counter (atom 0)
+        result (atom nil)]
+    (.compute path from-x from-y
+              (fn [x y]
+                (when (= 1 @counter)
+                  (reset! result [x y]))
+                (swap! counter inc)))
+    @result))
