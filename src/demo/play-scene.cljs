@@ -36,6 +36,13 @@
   (dotimes [i (count messages)]
     (d/draw-text! display 0 i (get messages i))))
 
+(defn player-stats-description
+  [{:keys [hp max-hp level experience]}]
+  (str
+    "HP:" hp "/" max-hp
+    " L:" level
+    " XP:" experience))
+
 (defn render
   [{{display-width :width display-height :height :as display} :display
     {:keys [entities visible-tiles player-id] {level-width :width level-height :height :as level} :level :as scene} :scene
@@ -53,7 +60,7 @@
                      :on visible-tiles)
       (d/draw-entities! entities :left left :top top :screen {:height (dec display-height)}
                         :only (d/visible? visible-tiles))
-      (d/draw-text! 0 (dec display-height) (str "HP: " (:hp player) "/" (:max-hp player)) )
+      (d/draw-text! 0 (dec display-height) (player-stats-description player))
       (print-messages (s/get-messages scene player))
       (d/draw-text! (- display-width (count hunger-state) 1) (dec display-height) hunger-state))))
 
