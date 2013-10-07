@@ -6,8 +6,7 @@
             [ruin.entity :as e]
             [ruin.level :as l]
             [ruin.entities :as es])
-  (:require-macros [lonocloud.synthread :as ->]
-                   [ruin.entities.macros :as es+])
+  (:require-macros [lonocloud.synthread :as ->])
   (:refer-clojure :exclude [remove]))
 
 (defn defscene
@@ -109,11 +108,3 @@
           :update-level (assoc scene :level value)
           scene))
       scene instructions)))
-
-(defn update-by-mixins
-  [scene mixin f]
-  (es+/each
-    [scene scene
-     entity (:entities scene)
-     :when (has-mixin? entity mixin)]
-    (update scene (f entity scene))))

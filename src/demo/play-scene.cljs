@@ -18,8 +18,7 @@
             [ruin.generate :as generate])
   (:use-macros [ruin.util.macros :only [aside]]
                [cljs.core.async.macros :only [go]])
-  (:require-macros [lonocloud.synthread :as ->]
-                   [ruin.entities.macros :as es+]))
+  (:require-macros [lonocloud.synthread :as ->]))
 
 (defn random-floor-position
   [level]
