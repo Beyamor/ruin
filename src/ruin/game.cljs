@@ -47,6 +47,7 @@
                      (.addEventListener
                        js/window event
                        (fn [e]
+                         (.preventDefault e)
                          (put! events
                                [event-type (.-keyCode e) (.-shiftKey e)]))))]
     (bind-event "keydown" :down)
